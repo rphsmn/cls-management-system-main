@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   name: string;
-  password: string; // Add this line
+  password?: string;
   role:
     | 'Employee'
     | 'Manager'

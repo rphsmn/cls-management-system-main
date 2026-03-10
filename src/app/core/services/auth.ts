@@ -9,11 +9,6 @@ export class AuthService {
   private readonly REQ_KEY = 'cls_leave_requests';
   private readonly USER_KEY = 'cls_user_session';
 
-  // The official hierarchy for Cor Logics Solution Inc.
-  // (roles may include: 'Manager', 'HR', 'Employee' plus Ops/Acc/IT/ Admin titles)
-  // Additional roles that could be added for advanced workflow:
-  // 'Ops Staff', 'Ops Sup', 'Acc Staff', 'Acc Sup', 'IT Dev', 'Admin Manager'
-  // Updated User list with the new specialized roles
   private users: User[] = [
     { id: 'MGR-001', name: 'Sarah Johnson', password: 'password123', role: 'Manager', credits: { paidLeave: 20, birthdayLeave: 1, sickLeave: 15 } },
     { id: 'HR-001', name: 'Jennifer Lee', password: 'password123', role: 'HR', credits: { paidLeave: 18, birthdayLeave: 1, sickLeave: 12 } },
@@ -27,6 +22,8 @@ export class AuthService {
 
   private requestsSubject = new BehaviorSubject<any[]>(this.getSavedRequests());
   requests$ = this.requestsSubject.asObservable();
+
+  constructor() {}
 
   private getInitialUser(): User | null {
     const saved = localStorage.getItem(this.USER_KEY);
@@ -66,7 +63,7 @@ export class AuthService {
       requesterName: user.name, 
       requesterRole: user.role,
       status: 'Pending',
-      stage: 'Initial', // Tracks if it's at the 1st or 2nd approval level
+      stage: 'Initial',
       targetReviewer: this.getInitialReviewer(user.role) 
     };
     
@@ -75,28 +72,27 @@ export class AuthService {
     this.syncRequests();
   }
 
+  private getInitialReviewer(role: string): string {
+    switch (role) {
+      case 'Ops Staff': return 'Ops Sup';
+      case 'Ops Sup':
+      case 'IT Dev': return 'Manager';
+      case 'HR': return 'Admin Manager';
+      default: return 'Manager';
+    }
+  }
+
   updateRequestStatus(requestToUpdate: any, newStatus: string) {
     const currentRequests = this.requestsSubject.value.map(req => {
-      if (req.dateFiled === requestToUpdate.dateFiled && req.requesterName === requestToUpdate.requesterName) {
-        
-        if (newStatus === 'Rejected') {
-          return { ...req, status: 'Rejected', targetReviewer: 'None' };
-        }
+      const isMatch = req.dateFiled === requestToUpdate.dateFiled && 
+                      req.requesterName === requestToUpdate.requesterName;
 
-        // Logic for "Approved" hand-off
+      if (isMatch) {
+        if (newStatus === 'Rejected') return { ...req, status: 'Rejected', targetReviewer: 'None' };
         if (newStatus === 'Approved') {
           if (req.stage === 'Initial') {
-            // First approval done, move to Final Review (usually HR)
-            return { 
-              ...req, 
-              stage: 'Final', 
-              status: 'Awaiting HR Approval', 
-              targetReviewer: 'HR' 
-            };
+            return { ...req, stage: 'Final', status: 'Awaiting HR Approval', targetReviewer: 'HR' };
           } else {
-            // Second/Final approval done: Math happens here
-            const days = this.calculateDays(req.range);
-            this.deductCredits(req.type, days, req.requesterName);
             return { ...req, status: 'Approved', targetReviewer: 'None' };
           }
         }
@@ -105,55 +101,5 @@ export class AuthService {
     });
     this.requestsSubject.next(currentRequests);
     this.syncRequests();
-  }
-
-  private calculateDays(range: string): number {
-    const parts = range.split(' to ');
-    if (parts.length !== 2) return 1;
-    const start = new Date(parts[0]);
-    const end = new Date(parts[1]);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 1;
-    const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Include both start and end
-    return Math.max(1, diffDays);
-  }
-
-  // Determine who gets the request first based on your rules
-  private getInitialReviewer(role: string): string {
-    switch (role) {
-      case 'Ops Staff': return 'Ops Sup';
-      case 'Account Staff': return 'Acc Sup';
-      case 'Ops Sup':
-      case 'Acc Sup':
-      case 'IT Dev': return 'Manager';
-      case 'HR': return 'Admin Manager';
-      case 'Admin Manager': return 'HR';
-      default: return 'Manager';
-    }
-  }
-
-  private deductCredits(leaveType: string, days: number, name: string) {
-    // We find the user being approved, not necessarily the one logged in
-    const targetUser = this.users.find(u => u.name === name);
-    if (!targetUser) return;
-
-    let key: 'paidLeave' | 'sickLeave' | 'birthdayLeave';
-    if (leaveType === 'Paid Leave') key = 'paidLeave';
-    else if (leaveType === 'Sick Leave') key = 'sickLeave';
-    else key = 'birthdayLeave';
-
-    targetUser.credits[key] = Math.max(0, targetUser.credits[key] - days);
-
-    // If the person being approved is the one currently logged in, update their view too
-    const currentUser = this.currentUserSubject.value;
-    if (currentUser && currentUser.name === name) {
-      this.currentUserSubject.next({ ...targetUser });
-      localStorage.setItem(this.USER_KEY, JSON.stringify(targetUser));
-    }
-  }
-
-  // Getter for the HR/Manager to see the whole team
-  get allStaff() {
-    return this.users;
   }
 }

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router'; 
+import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { User } from '../../core/models/user.model';
 import { Observable } from 'rxjs';
@@ -42,3 +42,4 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 }
+
