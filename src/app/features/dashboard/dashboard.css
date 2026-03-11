@@ -172,18 +172,22 @@ td {
 }
 
 /* Status: Clean Geometric Style */
+/* Base Pill Style */
 .status-pill {
-  padding: 5px 10px;
-  border-radius: 2px;
-  font-size: 9px;
-  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  display: inline-block;
 }
 
-.pending { background: #fffbeb; color: #b45309; }
-.approved { background: #f0fdf4; color: #15803d; }
-.rejected { background: #fef2f2; color: #991b1b; }
+/* Dynamic Colors based on req.status */
+.status-pill.pending { background-color: #fff4e5; color: #b76e00; }
+.status-pill.approved { background-color: #e6ffed; color: #1a7f37; }
+.status-pill.rejected { background-color: #ffebe9; color: #cf222e; }
+/* Blue for multi-stage steps */
+.status-pill.awaiting { background-color: #ddf4ff; color: #0969da; }
 
 .logout-btn {
   background: transparent;

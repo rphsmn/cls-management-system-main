@@ -1,4 +1,10 @@
 <div class="profile-container" *ngIf="currentUser">
+  <header class="main-header">
+    <button routerLink="/dashboard" class="back-link">
+      <span class="arrow">←</span> Back to Dashboard
+    </button>
+  </header>
+
   <div class="profile-header">
     <div class="avatar-circle">
       {{ currentUser.name.charAt(0) }}

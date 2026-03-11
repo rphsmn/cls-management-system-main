@@ -1,50 +1,70 @@
 <div class="history-container">
-  <header class="page-header">
-    <h1>My Leave Tracker</h1>
-    <p>Monitor the approval progress of your requests</p>
+  <header class="main-header">
+    <button routerLink="/dashboard" class="back-link">
+      <span class="arrow">←</span> BACK TO DASHBOARD
+    </button>
+    <h1 class="page-title">My Leave History</h1>
   </header>
 
-  <div class="table-card">
-    <table>
-      <thead>
-        <tr>
-          <th>Leave Details</th>
-          <th>Current Progress</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let req of requests$ | async">
-          <td>
-            <div class="leave-info">
-              <span class="type">{{ req.type | titlecase }}</span>
-              <span class="date">{{ req.range }}</span>
-            </div>
-          </td>
+  <main class="content">
+    <div class="table-card">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date Filed</th>
+            <th>Leave Type</th>
+            <th>Period</th>
+            <th>Reason</th>
+            <th class="progress-col">Approval Progress</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let req of (requests$ | async)">
+            <td>{{ req.dateFiled | date:'MMM dd, yyyy' }}</td>
+            <td>{{ req.leaveType }}</td>
+            <td>{{ req.period }}</td>
+            <td class="reason-text">"{{ req.reason }}"</td>
+            <td>
+              <div class="progress-track">
+                <div class="step completed">
+                  <div class="icon-circle">✓</div>
+                  <span class="step-label">Filed</span>
+                </div>
+
+                <div class="connector" [class.green]="req.status !== 'Rejected'"></div>
+
+                <div class="step" [class.completed]="req.stage === 'Final' || req.status === 'Approved'" 
+                                  [class.rejected]="req.status === 'Rejected' && req.stage === 'Initial'">
+                  <div class="icon-circle">
+                    <ng-container *ngIf="req.stage === 'Final' || req.status === 'Approved'">✓</ng-container>
+                    <ng-container *ngIf="req.status === 'Rejected' && req.stage === 'Initial'">✕</ng-container>
+                    <ng-container *ngIf="req.status === 'Pending' && req.stage === 'Initial'">?</ng-container>
+                  </div>
+                  <span class="step-label">Supervisor</span>
+                </div>
+
+                <div class="connector" [class.green]="req.stage === 'Final' || req.status === 'Approved'"></div>
+
+                <div class="step" [class.completed]="req.status === 'Approved' && req.stage === 'Final'"
+                                  [class.rejected]="req.status === 'Rejected' && req.stage === 'Final'">
+                  <div class="icon-circle">
+                    <ng-container *ngIf="req.status === 'Approved'">✓</ng-container>
+                    <ng-container *ngIf="req.status === 'Rejected' && req.stage === 'Final'">✕</ng-container>
+                    <ng-container *ngIf="req.status === 'Pending'">3</ng-container>
+                  </div>
+                  <span class="step-label">HR</span>
+                </div>
+              </div>
+            </td>
+          </tr>
           
-          <td class="tracker-cell">
-            <div class="progress-track">
-              <div class="step" [ngClass]="{'active': req.stage === 'Initial', 'completed': req.stage === 'Final' || req.status === 'Approved'}">
-                <div class="dot"></div>
-                <span>Supervisor</span>
-              </div>
-              
-              <div class="line"></div>
-
-              <div class="step" [ngClass]="{'active': req.stage === 'Final', 'completed': req.status === 'Approved'}">
-                <div class="dot"></div>
-                <span>HR / Admin</span>
-              </div>
-            </div>
-          </td>
-
-          <td>
-            <span [ngClass]="'status-pill ' + req.status.toLowerCase().replace(' ', '-')">
-              {{ req.status }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+          <tr *ngIf="(requests$ | async)?.length === 0">
+            <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">
+              No leave history found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
 </div>

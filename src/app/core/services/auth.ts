@@ -22,8 +22,8 @@ export class AuthService {
   private readonly USER_KEY = 'cls_user_session';
 
   private users: User[] = [
-    { id: 'MGR-001', name: 'Sarah Johnson', password: 'password123', role: 'Manager', credits: { paidLeave: 20, birthdayLeave: 1, sickLeave: 15 } },
-    { id: 'HR-001', name: 'Jennifer Lee', password: 'password123', role: 'HR', credits: { paidLeave: 18, birthdayLeave: 1, sickLeave: 12 } },
+    { id: 'MGR-001', name: 'Roy Belen', password: 'password123', role: 'Manager', credits: { paidLeave: 20, birthdayLeave: 1, sickLeave: 15 } },
+    { id: 'HR-001', name: 'Rosalie G. Neptuno', password: 'password123', role: 'HR', credits: { paidLeave: 18, birthdayLeave: 1, sickLeave: 12 } },
     { id: 'ADM-001', name: 'Admin Boss', password: 'password123', role: 'Admin Manager', credits: { paidLeave: 20, birthdayLeave: 1, sickLeave: 15 } },
     { id: 'OPS-SUP', name: 'Ops Supervisor', password: 'password123', role: 'Ops Sup', credits: { paidLeave: 15, birthdayLeave: 1, sickLeave: 10 } },
     { id: 'OPS-STF', name: 'Ralph', password: 'password123', role: 'Ops Staff', credits: { paidLeave: 15, birthdayLeave: 1, sickLeave: 10 } }
@@ -98,32 +98,29 @@ private getInitialReviewer(role: string): string {
   }
 }
 
+// Inside auth.ts
 updateRequestStatus(requestToUpdate: any, newStatus: string) {
   const currentRequests = this.requestsSubject.value.map(req => {
+    // Matches the specific leave request being clicked
     const isMatch = req.dateFiled === requestToUpdate.dateFiled && 
                     req.requesterName === requestToUpdate.requesterName;
 
     if (isMatch) {
-      if (newStatus === 'Rejected') return { ...req, status: 'Rejected', targetReviewer: 'None' };
+      // Logic for REJECT: Immediately stops the chain
+      if (newStatus === 'Rejected') {
+        return { 
+          ...req, 
+          status: 'Rejected', 
+          targetReviewer: 'None' 
+        };
+      }
       
+      // Logic for APPROVE: Moves to the next person based on your hierarchy
       if (newStatus === 'Approved') {
-        // STEP 1: If Ops/Acc Sup approved Staff request -> Send to HR
         if (req.targetReviewer === 'Ops Sup' || req.targetReviewer === 'Acc Sup') {
           return { ...req, status: 'Awaiting HR Approval', targetReviewer: 'HR' };
         }
-
-        // STEP 2: If Admin Manager approved Ops/Acc Sup/IT request -> Send to HR
-        if (req.targetReviewer === 'Admin Manager' && 
-           (req.requesterRole === 'Ops Sup' || req.requesterRole === 'Acc Sup' || req.requesterRole === 'IT Dev' || req.requesterRole === 'HR')) {
-          return { ...req, status: 'Awaiting HR Approval', targetReviewer: 'HR' };
-        }
-
-        // STEP 3: If Admin Manager approved a request from an Admin Manager -> Send to HR
-        if (req.targetReviewer === 'Admin Manager' && req.requesterRole === 'Admin Manager') {
-            return { ...req, status: 'Awaiting HR Approval', targetReviewer: 'HR' };
-        }
-        
-        // FINAL STEP: If HR approves (and they were the last step) -> Fully Approved
+        // Final approval step
         return { ...req, status: 'Approved', targetReviewer: 'None' };
       }
     }
@@ -131,6 +128,6 @@ updateRequestStatus(requestToUpdate: any, newStatus: string) {
   });
 
   this.requestsSubject.next(currentRequests);
-  this.syncRequests();
+  this.syncRequests(); // Saves to local storage so it persists
 }
 }

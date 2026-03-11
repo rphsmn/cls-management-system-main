@@ -1,16 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router'; // 1. Added this import
 import { AuthService, User } from '../../core/services/auth';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    RouterModule // 2. Added this to the imports array
+  ],
   templateUrl: './profile.html',
   styleUrl: './profile.css'
 })
 export class ProfileComponent implements OnInit {
-  // FIXED: Changed name to match the template's *ngIf="currentUser"
   currentUser: User | null = null;
   
   govInfo = {
@@ -22,7 +25,6 @@ export class ProfileComponent implements OnInit {
   constructor(private authService: AuthService) {}
 
   ngOnInit() {
-    // Subscribe so the template gets the raw user data without needing the async pipe
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });

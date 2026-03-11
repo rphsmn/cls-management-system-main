@@ -1,14 +1,14 @@
+import { RouterModule } from '@angular/router';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-// FIXED PATH: Go up 3 levels to reach 'src/app/' then down into 'core/services'
 import { AuthService } from '../../../core/services/auth'; 
 
 @Component({
   selector: 'app-file-leave',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './file-leave.html',
   styleUrl: './file-leave.css'
 })

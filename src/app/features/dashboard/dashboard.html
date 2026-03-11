@@ -3,21 +3,23 @@
     <div class="sidebar-header">
       <h2>Leave Management System</h2>
     </div>
-    <ul>
-      <li routerLink="/dashboard" routerLinkActive="active">DASHBOARD</li>
-      <li routerLink="/profile" routerLinkActive="active">PROFILE</li>
-      <li routerLink="/file-leave" routerLinkActive="active">FILE LEAVE</li>
-      <li routerLink="/history" routerLinkActive="active-link">
-        <span class="icon">📋</span>
-        <span>HISTORY / TRACKER</span>
-      </li>
-      <li *ngIf="currentUser && (currentUser.role === 'Manager' || currentUser.role === 'HR')" 
-          routerLink="/approvals" 
-          routerLinkActive="active"
-          class="admin-link">
-        APPROVALS
-      </li>
-    </ul>
+<ul>
+  <li routerLink="/dashboard" routerLinkActive="active">DASHBOARD</li>
+  <li routerLink="/profile" routerLinkActive="active">PROFILE</li>
+  <li routerLink="/file-leave" routerLinkActive="active">FILE LEAVE</li>
+  <li routerLink="/history" routerLinkActive="active">
+    <span>HISTORY / TRACKER</span>
+  </li>
+  <li *ngIf="currentUser && (
+      currentUser.role === 'Manager' || 
+      currentUser.role === 'HR' || 
+      currentUser.role === 'Admin Manager' || 
+      currentUser.role === 'Ops Sup' || 
+      currentUser.role === 'Acc Sup'
+  )" routerLink="/approvals" routerLinkActive="active">
+    APPROVALS
+  </li>
+</ul>
   </nav>
 
   <main class="content">
@@ -63,7 +65,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let req of requests$ | async">
-              <td class="type-cell">{{ req.type }}</td>
+              <td class="type-cell">{{ req.type | titlecase }}</td>
               <td>{{ req.dateFiled }}</td>
               <td>{{ req.range }}</td>
               <td>

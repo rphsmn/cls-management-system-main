@@ -1,38 +1,56 @@
-<div class="approvals-container">
-  <h1>Leave Approvals</h1>
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>Employee Name</th>
-          <th>Role</th>
-          <th>Leave Type</th>
-          <th>Reason</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let req of requests$ | async">
-          <ng-container *ngIf="canApprove(req)">
-            <td>{{ req.requesterName }}</td>
-            <td><span class="role-badge">{{ req.requesterRole }}</span></td>
+<div class="approvals-page">
+<header class="main-header">
+  <button routerLink="/dashboard" class="back-link">
+    <span class="arrow">←</span> Back to Dashboard
+  </button>
+  </header>
+
+  <main class="table-container">
+    <div *ngIf="requests$ | async as requestsList">
+      <table class="custom-table" *ngIf="hasPendingRequests(requestsList)">
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th>Role</th>
+            <th>Leave Type</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let req of requestsList">
+            <td class="bold-text">{{ req.requesterName }}</td>
+            <td><span class="role-tag">{{ req.requesterRole }}</span></td>
             <td>{{ req.type }}</td>
-            <td>"{{ req.reason }}"</td>
+            <td class="reason-cell">"{{ req.reason }}"</td>
+            <td><span class="status-pill pending">{{ req.status }}</span></td>
             <td>
-              <span [ngClass]="'status-pill ' + (req.status === 'Awaiting HR Approval' ? 'pending-hr' : req.status.toLowerCase())">
-                {{ req.status }}
-              </span>
-            </td>
-            <td>
-              <div *ngIf="req.status === 'Pending'" class="btn-group">
-                <button (click)="updateStatus(req, 'Approved')" class="btn-approve">Approve</button>
-                <button (click)="updateStatus(req, 'Rejected')" class="btn-reject">Reject</button>
+              <div class="action-flex">
+                <button (click)="updateStatus(req, 'Approve')" class="btn-cls btn-approve-action">Approve</button>
+                <button (click)="updateStatus(req, 'Reject')" class="btn-cls btn-reject-action">Reject</button>
               </div>
             </td>
-          </ng-container>
-        </tr>
-      </tbody>
-    </table>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal-content-card">
+      <h3 class="modal-header-text">Confirm Action</h3>
+      <p class="modal-body-text">
+        Are you sure you want to <strong>{{ pendingAction }}</strong> the request for <strong>{{ selectedRequest?.requesterName }}</strong>?
+      </p>
+      <div class="modal-footer-flex">
+        <button class="modal-btn btn-modal-cancel" (click)="closeModal()">Cancel</button>
+        <button class="modal-btn btn-modal-confirm" 
+                [class.reject-style]="pendingAction === 'Reject'" 
+                (click)="confirmAction()">
+          Yes, {{ pendingAction }}
+        </button>
+      </div>
+    </div>
   </div>
 </div>

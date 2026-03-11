@@ -1,47 +1,139 @@
-.form-container {
-  padding: 40px;
-  background-color: #1a5336; /* Corlogic Green */
+/* Center the entire page content */
+.file-leave-container {
+  padding: 60px 20px; /* More top padding gives it a premium feel */
+  background-color: #f8fafc; /* Slightly darker gray background makes the white card pop */
   min-height: 100vh;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Ensure the header and the form card stay the same width */
+.main-header, 
+.form-card {
+  width: 100%;
+  max-width: 800px; /* Adjust this to your preferred width */
+}
+
+.main-header {
+  margin-bottom: 30px;
+  text-align: left; /* Keeps text aligned left within the centered box */
+}
+
+/* Global Back Link Styling (Clean Text Look) */
+.back-link {
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  /* UPDATED FONT SIZE */
+  font-size: 15px; 
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  padding: 5px 0;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+/* Make the arrow scale slightly with the bigger text */
+.back-link .arrow {
+  margin-right: 8px;
+  font-size: 18px; /* Slightly larger arrow to match text */
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+
+.back-link:hover {
+  color: #1a5336 !important;
+}
+
+.back-link:hover .arrow {
+  transform: translateX(-5px);
+}
+
+/* Form Layout */
+.content {
+  margin-top: 20px;
 }
 
 .form-card {
   background: white;
-  padding: 30px;
-  border-radius: 15px;
+  padding: 50px; /* Increased internal padding */
+  border-radius: 12px; /* Softer corners */
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); /* Softer, larger shadow */
   width: 100%;
-  max-width: 500px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  max-width: 700px; /* Slightly wider to take up more horizontal space */
 }
 
-.form-header h2 { color: #1a5336; margin-bottom: 5px; }
-.form-header p { color: #666; font-size: 14px; margin-bottom: 25px; }
+/* Inputs & Labels */
+.input-group {
+  margin-bottom: 25px;
+}
 
-.input-group { margin-bottom: 20px; }
-.input-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+.input-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
 
-input, select, textarea {
+/* Form Controls */
+select, 
+textarea, 
+input[type="date"] {
   width: 100%;
   padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
   font-size: 14px;
+  color: #475569;
+  background-color: #f8fafc;
 }
 
-.date-row { display: flex; gap: 20px; }
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
 
+/* Date Row Alignment */
+.date-row {
+  display: flex;
+  gap: 20px;
+}
+
+.date-input {
+  flex: 1;
+}
+
+.date-label {
+  display: block;
+  font-size: 10px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+/* Submit Button */
 .btn-submit {
   width: 100%;
-  padding: 15px;
-  background-color: #ffeb3b; /* Corlogic Yellow */
-  color: #1a5336; /* Dark Green Text */
+  background: #1a5336;
+  color: #ffeb3b; /* Signature Yellow */
   border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 16px;
+  padding: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 4px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: background 0.2s;
+  margin-top: 10px;
 }
 
-.btn-submit:hover { background-color: #fdd835; transform: translateY(-2px); }
+.btn-submit:hover {
+  background: #14422b;
+}
