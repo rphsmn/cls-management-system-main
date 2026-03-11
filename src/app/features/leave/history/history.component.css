@@ -2,102 +2,123 @@
   padding: 40px;
   background-color: #fcfdfd;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
-.main-header, .content {
-  width: 100%;
-  max-width: 1100px;
-}
-
-.page-title { color: #1a5336; font-size: 28px; font-weight: 800; margin-top: 10px; }
-
-/* BACK BUTTON */
-.back-link {
-  background: transparent !important;
-  border: none !important;
-  color: #94a3b8 !important;
-  font-size: 18px !important; 
+.page-title {
+  color: #1a5336;
+  font-size: 28px;
   font-weight: 800;
-  cursor: pointer;
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: center;
-  transition: all 0.3s ease;
-  text-decoration: none;
+  margin-top: 10px;
 }
-.back-link .arrow { margin-right: 12px; font-size: 22px; transition: transform 0.3s ease; }
-.back-link:hover { color: #1a5336 !important; transform: scale(1.05); }
-.back-link:hover .arrow { transform: translateX(-8px); }
 
-/* TABLE */
+/* Back Button Styling */
+.back-link {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #1a5336;
+}
+
+/* Table Card */
 .table-card {
+  margin-top: 30px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  border: 1px solid #edf2f0;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
   overflow: hidden;
-  margin-top: 30px;
 }
-.history-table { width: 100%; border-collapse: collapse; }
-.history-table th { background: #f8fafc; color: #94a3b8; font-size: 11px; text-transform: uppercase; padding: 20px; text-align: left; }
-.history-table td { padding: 20px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
 
-/* PROGRESS TRACKER */
-.progress-col { width: 400px; }
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
 
+.history-table th {
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: 20px;
+  text-align: left;
+}
+
+.history-table td {
+  padding: 20px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+}
+
+/* Progress Track Logic */
 .progress-track {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
 }
 
 .step {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 70px;
+  gap: 4px;
+  min-width: 60px;
 }
 
 .icon-circle {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #cbd5e1;
-  color: white;
+  background: #f1f5f9;
+  color: #94a3b8;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  font-size: 12px;
   font-weight: bold;
-  font-size: 11px;
-  z-index: 2;
-  transition: all 0.3s ease;
 }
 
 .step-label {
-  margin-top: 6px;
-  font-size: 9px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 600;
   color: #94a3b8;
-  text-transform: uppercase;
 }
 
+/* Status Colors */
+.step.completed .icon-circle {
+  background: #1a5336;
+  color: white;
+}
+
+.step.completed .step-label {
+  color: #1a5336;
+}
+
+.step.rejected .icon-circle {
+  background: #dc2626;
+  color: white;
+}
+
+.step.rejected .step-label {
+  color: #dc2626;
+}
+
+/* Connectors */
 .connector {
-  flex: 1;
-  height: 3px;
-  background: #e2e8f0;
-  margin: 0 -5px;
-  margin-bottom: 16px;
-  z-index: 1;
-  transition: background-color 0.3s ease;
+  flex-grow: 1;
+  height: 2px;
+  background: #f1f5f9;
+  max-width: 40px;
 }
 
-/* Dynamic Logic Colors */
-.connector.green { background-color: #1a5336; }
-.step.completed .icon-circle { background-color: #1a5336; }
-.step.completed .step-label { color: #1a5336; }
-
-.step.rejected .icon-circle { background-color: #ef4444; }
-.step.rejected .step-label { color: #ef4444; }
+.connector.green {
+  background: #1a5336;
+}

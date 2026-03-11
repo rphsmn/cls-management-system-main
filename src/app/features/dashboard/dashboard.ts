@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService, User } from '../../core/services/auth';
-import { Observable } from 'rxjs';
+import { Observable, map, switchMap, of } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -12,13 +12,22 @@ import { Observable } from 'rxjs';
   styleUrl: './dashboard.css'
 })
 export class DashboardComponent implements OnInit {
+  // Use public observables to satisfy the template's async pipes
   currentUser$: Observable<User | null>;
-  requests$: Observable<any[]>; // Fixes TS2339 (requests$)
-  greeting: string = 'Welcome back';
+  requests$: Observable<any[]>;
+  greeting: string = '';
 
   constructor(private authService: AuthService, private router: Router) {
     this.currentUser$ = this.authService.currentUser$;
-    this.requests$ = this.authService.requests$;
+    
+    this.requests$ = this.currentUser$.pipe(
+      switchMap(user => {
+        if (!user) return of([]);
+        return this.authService.requests$.pipe(
+          map(all => all.filter(r => r.requesterName === user.name).slice(0, 5))
+        );
+      })
+    );
   }
 
   ngOnInit() {

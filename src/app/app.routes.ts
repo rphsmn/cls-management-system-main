@@ -11,8 +11,9 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
   { path: 'file-leave', component: FileLeaveComponent, canActivate: [AuthGuard] },
-  { path: 'approvals', component: ApprovalsComponent, canActivate: [AuthGuard] },
   { path: 'history', component: HistoryComponent, canActivate: [AuthGuard] },
+  { path: 'approvals', component: ApprovalsComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
-  { path: '', redirectTo: '/login', pathMatch: 'full' }
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: '**', redirectTo: '/login' }
 ];

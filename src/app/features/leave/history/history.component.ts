@@ -1,8 +1,8 @@
-import { RouterModule } from '@angular/router'
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { Observable, map, switchMap, of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth';
-import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-history',
@@ -12,9 +12,16 @@ import { Observable } from 'rxjs';
   styleUrl: './history.component.css'
 })
 export class HistoryComponent {
-  requests$: Observable<any[]>;
+  public requests$: Observable<any[]>;
 
   constructor(private authService: AuthService) {
-    this.requests$ = this.authService.requests$;
+    this.requests$ = this.authService.currentUser$.pipe(
+      switchMap(user => {
+        if (!user) return of([]);
+        return this.authService.requests$.pipe(
+          map(all => all.filter(req => req.requesterName === user.name))
+        );
+      })
+    );
   }
 }

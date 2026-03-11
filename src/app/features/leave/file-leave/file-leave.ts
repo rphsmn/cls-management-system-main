@@ -1,9 +1,8 @@
-import { RouterModule } from '@angular/router';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AuthService } from '../../../core/services/auth'; 
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../../core/services/auth';
 
 @Component({
   selector: 'app-file-leave',
@@ -14,21 +13,32 @@ import { AuthService } from '../../../core/services/auth';
 })
 export class FileLeaveComponent {
   leaveType: string = 'Paid Leave';
-  leaveReason: string = '';
   startDate: string = '';
   endDate: string = '';
+  leaveReason: string = '';
 
   constructor(private authService: AuthService, private router: Router) {}
 
   submitLeave() {
+    if (!this.startDate || !this.endDate || !this.leaveReason) {
+      alert('Please fill in all fields');
+      return;
+    }
+
     const newRequest = {
       type: this.leaveType,
       reason: this.leaveReason,
-      range: `${this.startDate} to ${this.endDate}`,
-      dateFiled: new Date().toLocaleDateString()
+      dateFiled: new Date().toISOString(),
+      period: `${this.startDate} - ${this.endDate}`
     };
 
+    // Use the authService to save the request
     this.authService.addRequest(newRequest);
-    this.router.navigate(['/dashboard']);
+
+    alert('Leave request submitted!');
+    
+    // Redirecting to '/history' to match your app.routes.ts
+    // This prevents the AuthGuard from getting confused by nested paths
+    this.router.navigate(['/history']);
   }
 }
