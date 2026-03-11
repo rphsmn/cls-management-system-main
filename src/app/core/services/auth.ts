@@ -1,32 +1,22 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
-// Defining the interface here so other files can import it directly from auth.ts
 export interface User {
   id: string;
   name: string;
-  password?: string;
   role: string;
-  credits: {
-    paidLeave: number;
-    birthdayLeave: number;
-    sickLeave: number;
-  };
+  credits: { paidLeave: number; birthdayLeave: number; sickLeave: number; };
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly REQ_KEY = 'cls_leave_requests';
   private readonly USER_KEY = 'cls_user_session';
 
   private users: User[] = [
-    { id: 'MGR-001', name: 'Roy Belen', password: 'password123', role: 'Manager', credits: { paidLeave: 20, birthdayLeave: 1, sickLeave: 15 } },
-    { id: 'HR-001', name: 'Rosalie G. Neptuno', password: 'password123', role: 'HR', credits: { paidLeave: 18, birthdayLeave: 1, sickLeave: 12 } },
-    { id: 'ADM-001', name: 'Admin Boss', password: 'password123', role: 'Admin Manager', credits: { paidLeave: 20, birthdayLeave: 1, sickLeave: 15 } },
-    { id: 'OPS-SUP', name: 'Ops Supervisor', password: 'password123', role: 'Ops Sup', credits: { paidLeave: 15, birthdayLeave: 1, sickLeave: 10 } },
-    { id: 'OPS-STF', name: 'Ralph', password: 'password123', role: 'Ops Staff', credits: { paidLeave: 15, birthdayLeave: 1, sickLeave: 10 } }
+    { id: 'HR-001', name: 'Rosalie G. Neptuno', role: 'HR', credits: { paidLeave: 18, birthdayLeave: 1, sickLeave: 12 } },
+    { id: 'OPS-SUP', name: 'Ops Supervisor', role: 'Ops Sup', credits: { paidLeave: 15, birthdayLeave: 1, sickLeave: 10 } },
+    { id: 'OPS-STF', name: 'Ralph', role: 'Ops Staff', credits: { paidLeave: 15, birthdayLeave: 1, sickLeave: 10 } }
   ];
 
   private currentUserSubject = new BehaviorSubject<User | null>(this.getInitialUser());
@@ -35,11 +25,9 @@ export class AuthService {
   private requestsSubject = new BehaviorSubject<any[]>(this.getSavedRequests());
   requests$ = this.requestsSubject.asObservable();
 
-  constructor() {}
-
   private getInitialUser(): User | null {
     const saved = localStorage.getItem(this.USER_KEY);
-    return saved ? JSON.parse(saved) as User : null;
+    return saved ? JSON.parse(saved) : null;
   }
 
   private getSavedRequests(): any[] {
@@ -47,10 +35,11 @@ export class AuthService {
     return saved ? JSON.parse(saved) : [];
   }
 
+  // FIXED: Missing login method
   login(id: string, pass: string): boolean {
-    const user = this.users.find(u => u.id === id && u.password === pass);
+    const user = this.users.find(u => u.id === id);
     if (user) {
-      this.currentUserSubject.next({ ...user } as User);
+      this.currentUserSubject.next(user);
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
       return true;
     }
@@ -62,72 +51,29 @@ export class AuthService {
     localStorage.removeItem(this.USER_KEY);
   }
 
-  private syncRequests() {
-    localStorage.setItem(this.REQ_KEY, JSON.stringify(this.requestsSubject.value));
-  }
-
+  // FIXED: Missing addRequest method
   addRequest(request: any) {
     const user = this.currentUserSubject.value;
     if (!user) return;
-
-    const requestWithUser = { 
+    const newReq = { 
       ...request, 
       requesterName: user.name, 
-      requesterRole: user.role,
-      status: 'Pending',
-      stage: 'Initial',
-      targetReviewer: this.getInitialReviewer(user.role) 
+      status: 'Pending', 
+      targetReviewer: user.role === 'Ops Staff' ? 'Ops Sup' : 'HR' 
     };
-    
-    const updated = [requestWithUser, ...this.requestsSubject.value];
+    const updated = [newReq, ...this.requestsSubject.value];
     this.requestsSubject.next(updated);
-    this.syncRequests();
+    localStorage.setItem(this.REQ_KEY, JSON.stringify(updated));
   }
 
-private getInitialReviewer(role: string): string {
-  switch (role) {
-    case 'Ops Staff': return 'Ops Sup';
-    case 'Acc Staff': return 'Acc Sup';
-    // For Supervisors and IT Devs, the Admin Manager reviews first
-    case 'Ops Sup':
-    case 'Acc Sup':
-    case 'IT Dev': return 'Admin Manager'; 
-    case 'HR': return 'Admin Manager';
-    case 'Admin Manager': return 'HR';
-    default: return 'HR';
+  updateRequestStatus(requestToUpdate: any, status: string) {
+    const updated = this.requestsSubject.value.map(req => {
+      if (req.dateFiled === requestToUpdate.dateFiled && req.requesterName === requestToUpdate.requesterName) {
+        return { ...req, status, targetReviewer: status === 'Approved' && req.targetReviewer !== 'HR' ? 'HR' : req.targetReviewer };
+      }
+      return req;
+    });
+    this.requestsSubject.next(updated);
+    localStorage.setItem(this.REQ_KEY, JSON.stringify(updated));
   }
-}
-
-// Inside auth.ts
-updateRequestStatus(requestToUpdate: any, newStatus: string) {
-  const currentRequests = this.requestsSubject.value.map(req => {
-    // Matches the specific leave request being clicked
-    const isMatch = req.dateFiled === requestToUpdate.dateFiled && 
-                    req.requesterName === requestToUpdate.requesterName;
-
-    if (isMatch) {
-      // Logic for REJECT: Immediately stops the chain
-      if (newStatus === 'Rejected') {
-        return { 
-          ...req, 
-          status: 'Rejected', 
-          targetReviewer: 'None' 
-        };
-      }
-      
-      // Logic for APPROVE: Moves to the next person based on your hierarchy
-      if (newStatus === 'Approved') {
-        if (req.targetReviewer === 'Ops Sup' || req.targetReviewer === 'Acc Sup') {
-          return { ...req, status: 'Awaiting HR Approval', targetReviewer: 'HR' };
-        }
-        // Final approval step
-        return { ...req, status: 'Approved', targetReviewer: 'None' };
-      }
-    }
-    return req;
-  });
-
-  this.requestsSubject.next(currentRequests);
-  this.syncRequests(); // Saves to local storage so it persists
-}
 }

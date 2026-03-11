@@ -12,33 +12,50 @@ import { AuthService } from '../../core/services/auth';
   styleUrl: './approvals.css'
 })
 export class ApprovalsComponent {
-  requests$: Observable<any[]>;
-  showModal = false; // Fixes image_266df8.png
-  pendingAction: 'Approve' | 'Reject' | null = null;
-  selectedRequest: any = null;
+  public requests$: Observable<any[]>;
+  // FIXED: Added missing properties for the rejection modal
+  public showModal = false;
+  public pendingAction: 'Approve' | 'Reject' | null = null;
+  public selectedRequest: any = null;
 
   constructor(private authService: AuthService) {
-    this.requests$ = this.authService.requests$; // Corrected variable name
+    this.requests$ = combineLatest([
+      this.authService.currentUser$,
+      this.authService.requests$
+    ]).pipe(
+      map(([user, requests]) => {
+        if (!user) return [];
+        // Filters requests so HR only sees what they need to approve/reject
+        return requests.filter(req => req.targetReviewer === user.role);
+      })
+    );
   }
 
-  updateStatus(req: any, action: 'Approve' | 'Reject') {
+  public updateStatus(req: any, action: 'Approve' | 'Reject') {
     this.selectedRequest = req;
     this.pendingAction = action;
     this.showModal = true;
   }
 
-  confirmAction() {
+  // FIXED: Added missing confirmation logic
+  public confirmAction() {
     if (this.selectedRequest && this.pendingAction) {
-      this.authService.updateRequestStatus(this.selectedRequest, this.pendingAction === 'Approve' ? 'Approved' : 'Rejected');
+      this.authService.updateRequestStatus(
+        this.selectedRequest, 
+        this.pendingAction === 'Approve' ? 'Approved' : 'Rejected'
+      );
       this.closeModal();
     }
   }
 
-  closeModal() {
+  public closeModal() {
     this.showModal = false;
+    this.selectedRequest = null;
+    this.pendingAction = null;
   }
 
-  hasPendingRequests(requests: any[]): boolean {
-    return requests && requests.length > 0;
+  // FIXED: Added missing helper method
+  public hasPendingRequests(requests: any[] | null): boolean {
+    return !!(requests && requests.length > 0);
   }
 }

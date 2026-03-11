@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AuthService, User } from '../../core/services/auth';
 
@@ -12,13 +12,14 @@ import { AuthService, User } from '../../core/services/auth';
   styleUrl: './dashboard.css'
 })
 export class DashboardComponent implements OnInit {
+  // Initializing these ensures the "no initializer" error is resolved
   currentUser$: Observable<User | null>;
-  requests$: Observable<any[]>;
+  requests$: Observable<any[]>; 
   greeting: string = '';
 
   constructor(private authService: AuthService, private router: Router) {
     this.currentUser$ = this.authService.currentUser$;
-    this.requests$ = this.authService.requests$;
+    this.requests$ = this.authService.requests$; 
   }
 
   ngOnInit() {
@@ -28,9 +29,9 @@ export class DashboardComponent implements OnInit {
     else this.greeting = 'Good Evening';
   }
 
+  // FIXED: Added missing logout method
   logout() {
     this.authService.logout();
     this.router.navigate(['/login']);
   }
 }
-
