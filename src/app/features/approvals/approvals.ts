@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Observable, map, combineLatest } from 'rxjs';
+import { Observable, map, switchMap, take } from 'rxjs'; 
 import { AuthService } from '../../core/services/auth';
 
 @Component({
@@ -13,22 +13,40 @@ import { AuthService } from '../../core/services/auth';
 })
 export class ApprovalsComponent {
   public requests$: Observable<any[]>;
-  // FIXED: Added missing properties for the rejection modal
   public showModal = false;
   public pendingAction: 'Approve' | 'Reject' | null = null;
   public selectedRequest: any = null;
 
   constructor(private authService: AuthService) {
-    this.requests$ = combineLatest([
-      this.authService.currentUser$,
-      this.authService.requests$
-    ]).pipe(
-      map(([user, requests]) => {
-        if (!user) return [];
-        // Filters requests so HR only sees what they need to approve/reject
-        return requests.filter(req => req.targetReviewer === user.role);
+    /**
+     * This logic watches the current user and the request list simultaneously.
+     * It filters the list so Supervisors only see 'Pending' 
+     * and HR only sees 'Awaiting HR Approval'.
+     */
+    this.requests$ = this.authService.currentUser$.pipe(
+      switchMap(user => {
+        return this.authService.requests$.pipe(
+          map(requests => {
+            if (!user) return [];
+
+            return requests.filter(req => {
+              if (user.role.includes('Sup')) {
+                // Supervisors only handle initial 'Pending' requests
+                return req.status === 'Pending';
+              } else if (user.role === 'HR' || user.role === 'Manager') {
+                // HR/Manager only handles requests already cleared by Supervisors
+                return req.status === 'Awaiting HR Approval';
+              }
+              return false;
+            });
+          })
+        );
       })
     );
+  }
+
+  public hasPendingRequests(requests: any[] | null): boolean {
+    return !!(requests && requests.length > 0);
   }
 
   public updateStatus(req: any, action: 'Approve' | 'Reject') {
@@ -37,13 +55,12 @@ export class ApprovalsComponent {
     this.showModal = true;
   }
 
-  // FIXED: Added missing confirmation logic
   public confirmAction() {
     if (this.selectedRequest && this.pendingAction) {
-      this.authService.updateRequestStatus(
-        this.selectedRequest, 
-        this.pendingAction === 'Approve' ? 'Approved' : 'Rejected'
-      );
+      // We send the raw action ('Approve' or 'Reject') to the service.
+      // The Service now handles the "Awaiting HR" vs "Approved" logic internally.
+      const actionType = this.pendingAction === 'Approve' ? 'Approved' : 'Rejected';
+      this.authService.updateRequestStatus(this.selectedRequest, actionType);
       this.closeModal();
     }
   }
@@ -52,10 +69,5 @@ export class ApprovalsComponent {
     this.showModal = false;
     this.selectedRequest = null;
     this.pendingAction = null;
-  }
-
-  // FIXED: Added missing helper method
-  public hasPendingRequests(requests: any[] | null): boolean {
-    return !!(requests && requests.length > 0);
   }
 }

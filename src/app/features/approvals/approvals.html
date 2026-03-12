@@ -1,31 +1,42 @@
-<div class="approvals-container">
+<div class="page-container">
+  <header class="main-header">
+    <button routerLink="/dashboard" class="back-link">
+      <span class="arrow">←</span> BACK TO DASHBOARD
+    </button>
+  </header>
+
   <div class="content-card">
-    <div *ngIf="requests$ | async as requests">
-      <div *ngIf="hasPendingRequests(requests); else noRequests">
-        <table>
-          <thead>
-            <tr>
-              <th>Employee</th>
-              <th>Type</th>
-              <th>Reason</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let req of requests">
-              <td>{{ req.requesterName }}</td>
-              <td>{{ req.type }}</td>
-              <td>{{ req.reason }}</td>
-              <td>
-                <button class="btn-approve" (click)="updateStatus(req, 'Approve')">Approve</button>
-                <button class="btn-reject" (click)="updateStatus(req, 'Reject')">Reject</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <h1 class="page-title">Pending Leave Approvals</h1>
+
+    <div class="table-wrapper" *ngIf="requests$ | async as requests">
+      <table class="cls-table" *ngIf="hasPendingRequests(requests); else noRequests">
+        <thead>
+          <tr>
+            <th>EMPLOYEE</th>
+            <th>TYPE</th>
+            <th>PERIOD</th>
+            <th>REASON</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let req of requests">
+            <td><strong>{{ req.requesterName }}</strong></td>
+            <td>{{ req.type }}</td>
+            <td>{{ req.period }}</td>
+            <td class="reason-text">"{{ req.reason }}"</td>
+            <td class="action-btns">
+              <button class="btn-approve" (click)="updateStatus(req, 'Approve')">Approve</button>
+              <button class="btn-reject" (click)="updateStatus(req, 'Reject')">Reject</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
       <ng-template #noRequests>
-        <p>No pending approvals found.</p>
+        <div class="empty-state">
+          <p>No pending requests found.</p>
+        </div>
       </ng-template>
     </div>
   </div>
@@ -33,10 +44,16 @@
   <div class="modal-overlay" *ngIf="showModal">
     <div class="modal-content">
       <h3>Confirm {{ pendingAction }}</h3>
-      <p>Are you sure you want to {{ pendingAction?.toLowerCase() }} this request?</p>
-      <div class="modal-actions">
-        <button (click)="closeModal()">Cancel</button>
-        <button [class.btn-danger]="pendingAction === 'Reject'" (click)="confirmAction()">Confirm</button>
+      <p>Are you sure you want to proceed with this {{ pendingAction | lowercase }}?</p>
+      
+      <div class="modal-btns">
+        <button 
+          class="btn-confirm" 
+          [class.btn-danger]="pendingAction === 'Reject'"
+          (click)="confirmAction()">
+           Confirm
+        </button>
+        <button class="btn-cancel" (click)="closeModal()">Cancel</button>
       </div>
     </div>
   </div>

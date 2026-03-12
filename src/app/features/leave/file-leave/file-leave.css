@@ -1,139 +1,89 @@
-/* Center the entire page content */
-.file-leave-container {
-  padding: 60px 20px; /* More top padding gives it a premium feel */
-  background-color: #f8fafc; /* Slightly darker gray background makes the white card pop */
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+/* Layout Core (Synced with other pages) */
+.dashboard-container { display: flex; height: 100vh; width: 100%; overflow: hidden; background-color: #f8fafc; }
+.sidebar { width: 240px; background-color: #1a5336; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-header { padding: 40px 24px; display: flex; align-items: center; gap: 12px; }
+.logo-dot { width: 8px; height: 8px; background-color: #4ade80; border-radius: 50%; }
+.sidebar h2 { font-size: 14px; font-weight: 700; letter-spacing: 1px; margin: 0; color: white; }
+.sidebar-content { flex-grow: 1; }
+.nav-menu { list-style: none; padding: 0; margin: 0; }
+.nav-menu li { padding: 12px 24px; margin: 4px 12px; border-radius: 6px; cursor: pointer; color: rgba(255, 255, 255, 0.7); font-size: 14px; font-weight: 500; }
+.active-link { background-color: white !important; color: #1a5336 !important; font-weight: 700 !important; }
+.sidebar-footer { padding: 24px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.logout-btn-sidebar { width: 100%; padding: 10px; background: transparent; border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.8); border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
 
-/* Ensure the header and the form card stay the same width */
-.main-header, 
-.form-card {
-  width: 100%;
-  max-width: 800px; /* Adjust this to your preferred width */
-}
+/* Main Content Area */
+.content { flex: 1; padding: 60px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+.content-header { width: 100%; max-width: 800px; margin-bottom: 32px; }
+.title-section h1 { font-size: 28px; font-weight: 800; color: #1a5336; margin: 0; }
+.sub-header { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.role-badge { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.status-text { color: #64748b; font-size: 13px; }
 
-.main-header {
-  margin-bottom: 30px;
-  text-align: left; /* Keeps text aligned left within the centered box */
-}
-
-/* Global Back Link Styling (Clean Text Look) */
-.back-link {
-  background: transparent !important;
-  border: none !important;
-  color: #94a3b8 !important;
-  /* UPDATED FONT SIZE */
-  font-size: 15px; 
-  font-weight: 700;
-  cursor: pointer;
-  text-transform: uppercase;
-  padding: 5px 0;
-  display: inline-flex;
-  align-items: center;
-  transition: all 0.3s ease;
-  text-decoration: none;
-}
-
-/* Make the arrow scale slightly with the bigger text */
-.back-link .arrow {
-  margin-right: 8px;
-  font-size: 18px; /* Slightly larger arrow to match text */
-  transition: transform 0.3s ease;
-  display: inline-block;
-}
-
-.back-link:hover {
-  color: #1a5336 !important;
-}
-
-.back-link:hover .arrow {
-  transform: translateX(-5px);
-}
-
-/* Form Layout */
-.content {
-  margin-top: 20px;
-}
-
-.form-card {
+/* The Form Card */
+.content-card {
   background: white;
-  padding: 50px; /* Increased internal padding */
-  border-radius: 12px; /* Softer corners */
+  padding: 40px;
+  border-radius: 16px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); /* Softer, larger shadow */
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   width: 100%;
-  max-width: 700px; /* Slightly wider to take up more horizontal space */
+  max-width: 800px;
 }
 
-/* Inputs & Labels */
-.input-group {
-  margin-bottom: 25px;
-}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.full-width { grid-column: span 2; }
 
-.input-group label {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #94a3b8;
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
-}
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* Form Controls */
-select, 
-textarea, 
-input[type="date"] {
-  width: 100%;
-  padding: 12px;
+input, select, textarea {
+  padding: 12px 16px;
   border: 1px solid #e2e8f0;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 14px;
-  color: #475569;
+  color: #1e293b;
   background-color: #f8fafc;
+  transition: all 0.2s ease;
 }
 
-textarea {
-  min-height: 100px;
-  resize: vertical;
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #1a5336;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(26, 83, 54, 0.1);
 }
 
-/* Date Row Alignment */
-.date-row {
+/* Form Buttons */
+.form-actions {
   display: flex;
-  gap: 20px;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #f1f5f9;
 }
 
-.date-input {
-  flex: 1;
-}
-
-.date-label {
-  display: block;
-  font-size: 10px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-/* Submit Button */
-.btn-submit {
-  width: 100%;
-  background: #1a5336;
-  color: #ffeb3b; /* Signature Yellow */
+.btn-primary {
+  background-color: #1a5336;
+  color: white;
   border: none;
-  padding: 14px;
-  font-size: 12px;
+  padding: 12px 24px;
+  border-radius: 8px;
   font-weight: 700;
-  text-transform: uppercase;
-  border-radius: 4px;
   cursor: pointer;
-  transition: background 0.2s;
-  margin-top: 10px;
+  transition: opacity 0.2s;
 }
 
-.btn-submit:hover {
-  background: #14422b;
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
 }
+
+.btn-secondary:hover { background-color: #f1f5f9; }

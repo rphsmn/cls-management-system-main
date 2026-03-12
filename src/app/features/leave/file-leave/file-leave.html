@@ -1,42 +1,76 @@
-<div class="file-leave-container">
-<header class="main-header">
-  <button routerLink="/dashboard" class="back-link">
-    <span class="arrow">←</span> Back to Dashboard
-  </button>
-  </header>
+<div class="dashboard-container" *ngIf="liveCredits$ | async as currentUser">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-dot"></div>
+      <h2>COR LOGICS</h2>
+    </div>
+    <div class="sidebar-content">
+      <ul class="nav-menu">
+        <li routerLink="/dashboard" routerLinkActive="active-link">Dashboard</li>
+        <li routerLink="/profile" routerLinkActive="active-link">Profile</li>
+        <li routerLink="/file-leave" routerLinkActive="active-link" class="active-link">File Leave</li>
+        <li routerLink="/history" routerLinkActive="active-link">History / Tracker</li>
+        <li *ngIf="currentUser.role !== 'Ops Staff'" 
+    routerLink="/approvals" 
+    routerLinkActive="active-link">
+    Approvals
+</li>
+      </ul>
+    </div>
+    <div class="sidebar-footer">
+      <button class="logout-btn-sidebar" (click)="logout()">Logout</button>
+    </div>
+  </aside>
 
   <main class="content">
-    <div class="form-card">
-      <form (submit)="submitLeave(); $event.preventDefault()">
-        <div class="input-group">
-          <label>Leave Type</label>
-          <select [(ngModel)]="leaveType" name="leaveType">
-            <option value="Paid Leave">Paid Leave (VL)</option>
-            <option value="Sick Leave">Sick Leave (SL)</option>
-            <option value="Birthday Leave">Birthday Leave</option>
-          </select>
+    <div class="content-header">
+      <div class="title-section">
+        <h1>File a Request</h1>
+        <div class="sub-header">
+          <span class="role-badge">{{ currentUser.role }}</span>
+          <span class="status-text">Submit your leave application for approval</span>
         </div>
+      </div>
+    </div>
 
-        <div class="input-group">
-          <label>Period</label>
-          <div class="date-row">
-            <div class="date-input">
-              <span class="date-label">Start Date</span>
-              <input type="date" [(ngModel)]="startDate" name="startDate" required>
-            </div>
-            <div class="date-input">
-              <span class="date-label">End Date</span>
-              <input type="date" [(ngModel)]="endDate" name="endDate" required>
-            </div>
+    <div class="content-card">
+      <form (ngSubmit)="onSubmit()" #leaveForm="ngForm" class="leave-form">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>Leave Type</label>
+            <select name="type" [(ngModel)]="leaveRequest.type" required>
+              <option value="" disabled selected>Select type of leave</option>
+              <option value="Paid Leave">Paid Leave</option>
+              <option value="Sick Leave">Sick Leave</option>
+              <option value="Birthday Leave">Birthday Leave</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" name="startDate" [(ngModel)]="leaveRequest.startDate" required>
+          </div>
+
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" name="endDate" [(ngModel)]="leaveRequest.endDate" required>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Reason for Leave</label>
+            <textarea 
+              name="reason" 
+              [(ngModel)]="leaveRequest.reason" 
+              placeholder="Provide a brief explanation..."
+              rows="4" 
+              required></textarea>
           </div>
         </div>
 
-        <div class="input-group">
-          <label>Reason for Leave</label>
-          <textarea [(ngModel)]="leaveReason" name="reason" placeholder="e.g. Attending a family event"></textarea>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" routerLink="/dashboard">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="!leaveForm.valid">Submit Request</button>
         </div>
-
-        <button type="submit" class="btn-submit">Submit Request</button>
       </form>
     </div>
   </main>

@@ -1,62 +1,83 @@
-<div class="history-container">
-  <header class="main-header">
-    <button routerLink="/dashboard" class="back-link">← BACK TO DASHBOARD</button>
-    <h1>My Leave History</h1>
-  </header>
+<div class="dashboard-container" *ngIf="currentUser$ | async as currentUser">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-dot"></div>
+      <h2>COR LOGICS</h2>
+    </div>
+    <div class="sidebar-content">
+      <ul class="nav-menu">
+        <li routerLink="/dashboard" routerLinkActive="active-link">Dashboard</li>
+        <li routerLink="/profile" routerLinkActive="active-link">Profile</li>
+        <li routerLink="/file-leave" routerLinkActive="active-link">File Leave</li>
+        <li routerLink="/history" routerLinkActive="active-link" class="active-link">History / Tracker</li>
+        <li *ngIf="currentUser.role !== 'Ops Staff'" 
+    routerLink="/approvals" 
+    routerLinkActive="active-link">
+    Approvals
+</li>
+      </ul>
+    </div>
+    <div class="sidebar-footer">
+      <button class="logout-btn-sidebar" (click)="logout()">Logout</button>
+    </div>
+  </aside>
 
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>DATE FILED</th>
-          <th>LEAVE TYPE</th>
-          <th>PERIOD</th>
-          <th>REASON:</th>
-          <th>APPROVAL PROGRESS</th> 
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let req of (requests$ | async)">
-          <td>{{ req.dateFiled | date:'MMM d, y' }}</td>
-          <td>{{ req.type }}</td>
-          <td>{{ req.range }}</td>
-          <td>"{{ req.reason }}"</td>
-          <td>
-            <div class="progress-track">
-              <div class="step completed">
-                <div class="icon-circle">✓</div>
-                <span class="step-label">Filed</span>
-              </div>
+  <main class="content">
+    <div class="content-header">
+      <div class="title-section">
+        <h1>My Leave History</h1>
+        <div class="sub-header">
+          <span class="role-badge">{{ currentUser.role }}</span>
+          <span class="status-text">Tracking your Leave Requests</span>
+        </div>
+      </div>
+    </div>
 
-              <div class="connector" [class.green]="req.status !== 'Pending'"></div>
-
-              <div class="step" 
-                   [class.completed]="req.status === 'Awaiting HR Approval' || req.status === 'Approved' || (req.status === 'Rejected' && req.targetReviewer === 'HR')"
-                   [class.rejected]="req.status === 'Rejected' && (req.targetReviewer === 'Ops Sup' || req.targetReviewer === 'Acc Sup')">
-                <div class="icon-circle">
-                  <ng-container *ngIf="req.status === 'Awaiting HR Approval' || req.status === 'Approved' || (req.status === 'Rejected' && req.targetReviewer === 'HR')">✓</ng-container>
-                  <ng-container *ngIf="req.status === 'Rejected' && (req.targetReviewer === 'Ops Sup' || req.targetReviewer === 'Acc Sup')">✕</ng-container>
-                  <ng-container *ngIf="req.status === 'Pending'">?</ng-container>
+    <div class="history-card">
+      <div class="table-container">
+        <table class="cls-table">
+          <thead>
+            <tr>
+              <th>Date Filed</th>
+              <th>Leave Type</th>
+              <th>Period</th>
+              <th>Reason</th>
+              <th class="progress-col">Approval Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let req of (requests$ | async)">
+              <td>{{ req.dateFiled | date:'MMM d, y' }}</td>
+              <td><span class="type-tag">{{ req.type }}</span></td>
+              <td class="period-text">{{ req.period }}</td>
+              <td class="reason-cell">"{{ req.reason }}"</td>
+              <td>
+                <div class="progress-track">
+                  <div class="step completed">
+                    <div class="icon-circle">✓</div>
+                    <span class="step-label">Filed</span>
+                  </div>
+                  <div class="connector" [class.active]="req.status !== 'Pending'"></div>
+                  
+                  <div class="step" [ngClass]="getSupervisorClass(req)">
+                    <div class="icon-circle">{{ getSupervisorIcon(req) }}</div>
+                    <span class="step-label">Sup</span>
+                  </div>
+                  <div class="connector" [class.active]="req.status === 'Approved' || req.status === 'Awaiting HR Approval' || (req.status === 'Rejected' && (req.targetReviewer === 'HR' || req.targetReviewer === 'Manager'))"></div>
+                  
+                  <div class="step" [ngClass]="getHRClass(req)">
+                    <div class="icon-circle">{{ getHRIcon(req) }}</div>
+                    <span class="step-label">HR</span>
+                  </div>
                 </div>
-                <span class="step-label">Supervisor</span>
-              </div>
-
-              <div class="connector" [class.green]="req.status === 'Approved' || (req.status === 'Rejected' && req.targetReviewer === 'HR')"></div>
-
-              <div class="step" 
-                   [class.completed]="req.status === 'Approved'"
-                   [class.rejected]="req.status === 'Rejected' && req.targetReviewer === 'HR'">
-                <div class="icon-circle">
-                  <ng-container *ngIf="req.status === 'Approved'">✓</ng-container>
-                  <ng-container *ngIf="req.status === 'Rejected' && req.targetReviewer === 'HR'">✕</ng-container>
-                  <ng-container *ngIf="req.status === 'Awaiting HR Approval'">...</ng-container>
-                </div>
-                <span class="step-label">HR / Manager</span>
-              </div>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+              </td>
+            </tr>
+            <tr *ngIf="(requests$ | async)?.length === 0">
+              <td colspan="5" class="empty-state">No leave applications found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
 </div>
