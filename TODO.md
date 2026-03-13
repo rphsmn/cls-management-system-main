@@ -1,31 +1,22 @@
-# TODO: Fix Code Errors
+# Approvals Page Pagination Enhancement
+## Task: Add enhanced approvals template with pagination
 
-## ✅ COMPLETED - All 9 errors have been fixed!
+### ✅ Step 1: Add pagination logic to approvals.ts ✓
+- Added `itemsPerPage = 10`, `currentPage = 1`
+- Created `allFilteredRequests$` (extracted filtering logic)  
+- Created `paginatedRequests$` (slice based on currentPage)
+- Added methods: `totalPages`, `getStartRange()`, `getEndRange()`, `prevPage()`, `nextPage()`
 
-### Fix 1: Import path for HistoryComponent in app.routes.ts
-- ✅ Changed `'./features/leave/history/history'` to `'./features/leave/history/history.component'`
+### ☐ Step 2: Replace approvals.html with enhanced template  
+- Use provided HTML with `paginatedRequests`, pagination controls
 
-### Fix 2: Import path for dashboard.ts
-- ✅ Fixed import from `'../auth/auth'` to `'../../core/services/auth'`
-- ✅ Added separate import for User from `'../../core/models/user.model'`
+### ☐ Step 3: Add pagination CSS to approvals.css
+- `.pagination-container`, `.pagination-info`, `.btn-pager`, `.page-numbers`, etc.
 
-### Fix 3: Import path for approvals.ts
-- ✅ Fixed import from `'../auth/auth'` to `'../../core/services/auth'`
-- ✅ Added import for User from `'../../core/models/user.model'`
-- ✅ Used type casting `(user) => { this.currentUser = user as User | null }` to resolve type mismatch
+### ☐ Step 4: Test functionality
+- Verify search + pagination work
+- Test approve/reject actions
+- Check browser console for errors
 
-### Fix 4-7: Previous fixes (consolidated)
-- ✅ Removed duplicate `User` interface from auth.ts - now imports from `../models/user.model`
-- ✅ Fixed history.component.ts import path to use `'../../../core/services/auth'`
-- ✅ Changed `password: string` to `password?: string` in user.model.ts
-- ✅ Fixed auth.guard.ts import path `'../services/auth'`
-
-### Fix 8: Missing Profile route
-- ✅ Added ProfileComponent import and route in app.routes.ts
-
-### Fix 9: AuthGuard not applied to routes
-- ✅ Applied AuthGuard to all protected routes (dashboard, file-leave, approvals, history, profile)
-
-### Result
-- ✅ Build successful - Application running at http://localhost:4200/
+### ☐ Step 5: Complete task
 

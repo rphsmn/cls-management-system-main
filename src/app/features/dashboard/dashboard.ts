@@ -54,7 +54,6 @@ export class DashboardComponent implements OnInit {
         return {
           ...user,
           liveCredits: {
-            // Added Math.max(0, ...) to prevent negative balances
             paidLeave: Math.max(0, user.credits.paidLeave - calculateUsed('paid leave')),
             birthdayLeave: Math.max(0, user.credits.birthdayLeave - calculateUsed('birthday leave')),
             sickLeave: Math.max(0, user.credits.sickLeave - calculateUsed('sick leave'))
@@ -86,10 +85,5 @@ export class DashboardComponent implements OnInit {
     if (hour < 12) this.greeting = 'Good Morning';
     else if (hour < 18) this.greeting = 'Good Afternoon';
     else this.greeting = 'Good Evening';
-  }
-
-  logout() {
-    this.authService.logout();
-    this.router.navigate(['/login']);
   }
 }

@@ -1,97 +1,48 @@
-<div class="dashboard-container" *ngIf="currentUser$ | async as currentUser">
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="logo-dot"></div>
-      <h2>COR LOGICS</h2>
-    </div>
-    <div class="sidebar-content">
-      <ul class="nav-menu">
-        <li routerLink="/dashboard" routerLinkActive="active-link">Dashboard</li>
-        <li routerLink="/profile" routerLinkActive="active-link" class="active-link">Profile</li>
-        <li routerLink="/file-leave" routerLinkActive="active-link">File Leave</li>
-        <li routerLink="/history" routerLinkActive="active-link">History / Tracker</li>
-        <li *ngIf="currentUser.role !== 'Ops Staff'" 
-            routerLink="/approvals" 
-            routerLinkActive="active-link">
-            Approvals
-        </li>
-      </ul>
-    </div>
-    <div class="sidebar-footer">
-      <button class="logout-btn-sidebar" (click)="logout()">Logout</button>
-    </div>
-  </aside>
-
-  <main class="content">
-    <div class="content-header">
-      <div class="title-section">
-        <h1>My Profile</h1>
-        <div class="sub-header">
-          <span class="role-badge">{{ currentUser.role }}</span>
-          <span class="status-text">CLS-2026-0042</span>
-        </div>
+<div class="profile-page-container" *ngIf="currentUser$ | async as user">
+  <header class="page-header">
+    <div class="title-group">
+      <h1>My Profile</h1>
+      <div class="badge-row">
+        <span class="role-badge">{{ user.role }}</span>
+        <span class="id-text">CLS-2026-0042</span>
       </div>
     </div>
+  </header>
 
-    <div class="profile-inner">
-      <div class="info-grid profile-layout">
-        
-        <div class="info-sub-card identity-card">
-          <div class="avatar-circle synced">
-            {{ currentUser.name.charAt(0) }}
-          </div>
-          <div class="user-meta synced">
-            <h2>{{ currentUser.name }}</h2>
-            <p>IT Intern • Information Technology</p>
-          </div>
-        </div>
-
-        <div class="info-sub-card">
-          <div class="card-header">
-            <h3>Employment Details</h3>
-            <span class="verified-tag">✓ Verified</span>
-          </div>
-          <div class="info-row">
-            <label>Department</label>
-            <span>Information Technology</span>
-          </div>
-          <div class="info-row">
-            <label>Position</label>
-            <span>Software Development Intern</span>
-          </div>
-          <div class="info-row">
-            <label>Supervisor</label>
-            <span>Technical Lead</span>
-          </div>
-        </div>
-
-        <div class="info-sub-card">
-          <div class="card-header">
-            <h3>Government IDs</h3>
-            <span class="verified-tag">✓ Verified</span>
-          </div>
-          <div class="info-row">
-            <label>TIN Number</label>
-            <span class="mono">{{ govInfo.tin }}</span>
-          </div>
-          <div class="info-row">
-            <label>SSS Number</label>
-            <span class="mono">{{ govInfo.sss }}</span>
-          </div>
-          <div class="info-row">
-            <label>PhilHealth</label>
-            <span class="mono">{{ govInfo.philHealth }}</span>
-          </div>
-        </div>
+  <div class="profile-grid">
+    <section class="info-card">
+      <div class="avatar-circle">{{ user.name.charAt(0) }}</div>
+      <div class="user-details">
+        <h2>{{ user.name }}</h2>
+        <p>IT Intern • Information Technology</p>
       </div>
+    </section>
 
-      <div class="profile-actions-zone card-centered">
-        <p>Need to update your professional information?</p>
-        <a [href]="'mailto:ralphsamsonidsc@gmail.com?subject=Information Update Request - ' + currentUser.id" 
-           class="btn-hr-request">
-          Request Info Update from HR
-        </a>
+    <section class="info-card">
+      <div class="card-title">
+        <h3>Employment Details</h3>
+        <span class="verified">✓ Verified</span>
       </div>
-    </div>
-  </main>
+      <div class="data-row"><label>Department</label><span>Information Technology</span></div>
+      <div class="data-row"><label>Position</label><span>Software Development Intern</span></div>
+      <div class="data-row"><label>Supervisor</label><span>Technical Lead</span></div>
+    </section>
+
+    <section class="info-card">
+      <div class="card-title">
+        <h3>Government IDs</h3>
+        <span class="verified">✓ Verified</span>
+      </div>
+      <div class="data-row"><label>TIN Number</label><span class="mono">{{ govInfo.tin }}</span></div>
+      <div class="data-row"><label>SSS Number</label><span class="mono">{{ govInfo.sss }}</span></div>
+      <div class="data-row"><label>PhilHealth</label><span class="mono">{{ govInfo.philHealth }}</span></div>
+    </section>
+  </div>
+
+  <footer class="action-footer">
+    <p>Need to update your professional information?</p>
+    <a [href]="'mailto:hr@corlogics.com?subject=Update Request - ' + user.id" class="update-btn">
+      Request Info Update from HR
+    </a>
+  </footer>
 </div>
