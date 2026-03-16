@@ -1,24 +1,23 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, Router, UrlTree } from '@angular/router';
+import { Router, UrlTree } from '@angular/router';
 import { AuthService } from '../services/auth';
-import { Observable, map, take } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
-export class AuthGuard implements CanActivate {
+export class AuthGuard {
   constructor(private authService: AuthService, private router: Router) {}
 
   canActivate(): boolean | UrlTree {
-    // 1. Check localStorage immediately (Synchronous)
+    // Check if user session exists in localStorage
     const savedUser = localStorage.getItem('cls_user_session');
     
     if (savedUser) {
-      // If data exists in storage, allow the route.
+      // Session exists, allow access to protected routes
       return true;
     }
 
-    // 2. If nothing is in storage, they are definitely not logged in.
+    // No session, redirect to login
     return this.router.createUrlTree(['/login']);
   }
 }

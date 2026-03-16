@@ -1,29 +1,35 @@
 import { Routes } from '@angular/router';
-import { MainLayoutComponent } from './core/components/main-layout/main-layout'; 
-import { DashboardComponent } from './features/dashboard/dashboard';
-import { FileLeaveComponent } from './features/leave/file-leave/file-leave';
-import { ApprovalsComponent } from './features/approvals/approvals';
-import { HistoryComponent } from './features/leave/history/history.component';
 import { LoginComponent } from './features/auth/login/login';
-import { ProfileComponent } from './features/profile/profile';
-import { Calendar } from './features/calendar/calendar';
+import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password';
+import { ResetPasswordComponent } from './features/auth/reset-password/reset-password'; // The missing piece!
+import { MainLayoutComponent } from './core/components/main-layout/main-layout';
+import { DashboardComponent } from './features/dashboard/dashboard';
 import { AuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
+  { 
+    path: 'login', 
+    component: LoginComponent, 
+    title: 'Login | COR LOGICS' 
+  },
+  { 
+    path: 'forgot-password', 
+    component: ForgotPasswordComponent, 
+    title: 'Forgot Password | COR LOGICS' 
+  },
+  { 
+    path: 'reset-password', 
+    component: ResetPasswordComponent, 
+    title: 'Reset Password | COR LOGICS' 
+  },
   {
     path: '',
     component: MainLayoutComponent,
     canActivate: [AuthGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
-      { path: 'file-leave', component: FileLeaveComponent },
-      { path: 'history', component: HistoryComponent },
-      { path: 'approvals', component: ApprovalsComponent },
-      { path: 'profile', component: ProfileComponent },
-      { path: 'calendar', component: Calendar },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
-  { path: '**', redirectTo: '/login' }
+  { path: '**', redirectTo: 'login' }
 ];

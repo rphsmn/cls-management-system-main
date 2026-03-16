@@ -1,39 +1,55 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AuthService } from '../../../core/services/auth';
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../../core/services/auth'; 
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [ReactiveFormsModule, CommonModule, RouterModule],
   templateUrl: './login.html',
-  styleUrl: './login.css',
+  styleUrls: ['./login.css']
 })
 export class LoginComponent {
-  employeeId = '';
-  password = '';
-  errorMessage = '';
+  loginForm: FormGroup;
+  passwordVisible = false;
+  isLoading = false;
+  errorMessage: string | null = null;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private authService = inject(AuthService);
 
-  onLogin() {
-    // Clear any old error messages
-    this.errorMessage = '';
+  constructor() {
+    this.loginForm = this.fb.group({
+      employeeId: ['', [Validators.required]],
+      password: ['', [Validators.required]],
+      rememberMe: [false]
+    });
+  }
 
-    if (!this.employeeId || !this.password) {
-      this.errorMessage = 'Please enter both ID and Password.';
-      return;
-    }
+  togglePassword() {
+    this.passwordVisible = !this.passwordVisible;
+  }
 
-    const success = this.authService.login(this.employeeId, this.password);
+  async onSubmit() {
+    if (this.loginForm.invalid || this.isLoading) return;
+
+    this.isLoading = true;
+    this.errorMessage = null;
+
+    // Small delay to show the "Authenticating" state as requested
+    await new Promise(resolve => setTimeout(resolve, 1200));
+
+    const { employeeId, password } = this.loginForm.value;
+    const success = this.authService.login(employeeId, password);
 
     if (success) {
-      // Small delay can sometimes help with session synchronization
       this.router.navigate(['/dashboard']);
     } else {
-      this.errorMessage = 'Invalid ID or Password.';
+      this.isLoading = false;
+      this.errorMessage = "Access Denied. Invalid Employee ID or Password.";
     }
   }
 }

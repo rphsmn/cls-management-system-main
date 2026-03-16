@@ -53,6 +53,7 @@ export class AuthService {
   }
 
   login(id: string, pass: string): boolean {
+    // Current validation logic (ID check). In production, check 'pass' as well.
     const user = this.users.find(u => u.id === id);
     if (user) {
       this.currentUserSubject.next({ ...user });
@@ -62,11 +63,16 @@ export class AuthService {
     return false;
   }
 
+  logout() {
+    this.currentUserSubject.next(null);
+    localStorage.removeItem(this.USER_KEY);
+  }
+
   addRequest(newRequest: any) {
     const user = this.currentUserSubject.value;
     const enriched = { 
       ...newRequest, 
-      id: Date.now(), // Fixed: Unique ID for precise matching
+      id: Date.now(), 
       status: 'Pending', 
       employeeName: user?.name || 'Staff',
       companyId: user?.id || 'N/A',
@@ -90,7 +96,6 @@ export class AuthService {
         if (currentUser.role === 'Ops Sup' || currentUser.role === 'Supervisor') {
           return { ...req, status: 'Awaiting HR Approval', targetReviewer: 'HR' };
         } 
-        
         else if (currentUser.role === 'HR' || currentUser.role === 'Manager') {
           this.deductCredits(req.employeeName, req.type, req.period);
           return { ...req, status: 'Approved', targetReviewer: 'None' };
@@ -123,6 +128,7 @@ export class AuthService {
         daysToDeduct = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
       }
       user.credits[creditKey] = Math.max(0, user.credits[creditKey] - daysToDeduct);
+      
       if (this.currentUserSubject.value?.name === userName) {
         this.currentUserSubject.next({ ...user });
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
@@ -133,10 +139,5 @@ export class AuthService {
   private saveRequests(requests: any[]) {
     this.requestsSubject.next(requests);
     localStorage.setItem(this.REQ_KEY, JSON.stringify(requests));
-  }
-
-  logout() {
-    this.currentUserSubject.next(null);
-    localStorage.removeItem(this.USER_KEY);
   }
 }

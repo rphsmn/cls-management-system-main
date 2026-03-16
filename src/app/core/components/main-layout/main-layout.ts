@@ -7,7 +7,7 @@ import { AuthService, User } from '../../services/auth';
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule], // FIX: Corrects all template errors
+  imports: [CommonModule, RouterModule],
   templateUrl: './main-layout.html',
   styleUrls: ['./main-layout.css']
 })
@@ -16,7 +16,6 @@ export class MainLayoutComponent {
   showLogoutModal = false;
 
   constructor(private authService: AuthService, private router: Router) {
-    // FIX: authService is now initialized correctly before use
     this.currentUser$ = this.authService.currentUser$;
   }
 
@@ -30,6 +29,7 @@ export class MainLayoutComponent {
 
   executeLogout() {
     this.authService.logout();
+    this.showLogoutModal = false; // Reset modal state
     this.router.navigate(['/login']);
   }
 }
