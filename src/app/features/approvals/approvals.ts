@@ -25,55 +25,59 @@ export class ApprovalsComponent {
   currentPage$ = this.currentPageSubject.asObservable();
   
   searchControl = new FormControl('');
+  monthControl = new FormControl(new Date().getMonth());
+  yearControl = new FormControl(new Date().getFullYear());
+
+  months = [
+    { v: 0, l: 'Jan' }, { v: 1, l: 'Feb' }, { v: 2, l: 'Mar' }, { v: 3, l: 'Apr' },
+    { v: 4, l: 'May' }, { v: 5, l: 'Jun' }, { v: 6, l: 'Jul' }, { v: 7, l: 'Aug' },
+    { v: 8, l: 'Sep' }, { v: 9, l: 'Oct' }, { v: 10, l: 'Nov' }, { v: 11, l: 'Dec' }
+  ];
+  years = [2024, 2025, 2026];
+
   expandedReq: any = null;
 
   constructor() {
     this.allFilteredRequests$ = combineLatest([
       this.authService.currentUser$,
       this.authService.requests$,
-      this.searchControl.valueChanges.pipe(
-        startWith(''),
-        // Reset to page 1 whenever user types
-        tap(() => this.currentPageSubject.next(1))
-      )
+      this.searchControl.valueChanges.pipe(startWith(''), tap(() => this.currentPageSubject.next(1))),
+      this.monthControl.valueChanges.pipe(startWith(this.monthControl.value), tap(() => this.currentPageSubject.next(1))),
+      this.yearControl.valueChanges.pipe(startWith(this.yearControl.value), tap(() => this.currentPageSubject.next(1)))
     ]).pipe(
-      map(([user, allRequests, searchTerm]) => {
+      map(([user, allRequests, searchTerm, selMonth, selYear]) => {
         if (!user || !allRequests) return [];
         
         const term = searchTerm?.toLowerCase().trim() || '';
         const myRole = user.role?.toUpperCase().trim() || '';
 
         return allRequests.filter(req => {
-          // 1. IMPROVED SEARCH LOGIC (Now matches History page)
+          // 1. Search Logic
           const matchesSearch = 
             req.employeeName?.toLowerCase().includes(term) || 
             req.companyId?.toLowerCase().includes(term) ||
-            req.type?.toLowerCase().includes(term); // Added Leave Type to search
+            req.type?.toLowerCase().includes(term);
 
           if (!matchesSearch || req.companyId === user.id) return false;
 
+          // 2. Filter by Leave Period (Matches Month/Year dropdown)
+          const isMatch = this.checkPeriodMatch(req.period, Number(selMonth), Number(selYear));
+          if (!isMatch) return false;
+
+          // 3. Role Hierarchy Logic
           const reqRole = req.role?.toUpperCase().trim() || '';
           const status = req.status;
 
-          // --- ROLE HIERARCHY LOGIC ---
           if (myRole === 'OPS-ADM-SUP' || myRole === 'OPS SUPERVISOR') {
             return status === 'Pending' && (reqRole === 'OPS-ADM-STF' || reqRole === 'OPERATIONS STAFF');
           }
-
           if (myRole === 'ACC-ADM-SUP' || myRole === 'ACC SUPERVISOR') {
             return status === 'Pending' && (reqRole === 'ACC-ADM-STF' || reqRole === 'ACCOUNTS STAFF');
           }
-
           if (myRole === 'ADM-MGR' || myRole === 'ADMIN MANAGER') {
-            const managedRoles = [
-              'OPS-ADM-SUP', 'OPS SUPERVISOR',
-              'ACC-ADM-SUP', 'ACC SUPERVISOR',
-              'IT-DEV', 'IT DEVELOPER',
-              'HR-ADM', 'HR'
-            ];
+            const managedRoles = ['OPS-ADM-SUP', 'OPS SUPERVISOR', 'ACC-ADM-SUP', 'ACC SUPERVISOR', 'IT-DEV', 'IT DEVELOPER', 'HR-ADM', 'HR'];
             return status === 'Pending' && managedRoles.includes(reqRole);
           }
-
           if (myRole === 'HR-ADM' || myRole === 'HR') {
             const isAdminManager = (reqRole === 'ADM-MGR' || reqRole === 'ADMIN MANAGER');
             const isEscalated = status === 'Awaiting HR Approval' || status === 'Awaiting Final HR Approval';
@@ -93,19 +97,49 @@ export class ApprovalsComponent {
     );
   }
 
-  // --- ACTIONS ---
+  // Logic to see if the leave falls within the selected month/year
+  private checkPeriodMatch(period: string, selMonth: number, selYear: number): boolean {
+    if (!period) return false;
+    const separator = period.includes(' to ') ? ' to ' : ' - ';
+    const dates = period.split(separator);
+    
+    const startDate = new Date(dates[0].trim());
+    const endDate = dates[1] ? new Date(dates[1].trim()) : startDate;
 
-updateStatus(req: any, action: string) {
-  const isApprove = action === 'Approve';
-  Swal.fire({
-    title: `<div style="color: #1a5336; font-weight: 800; font-size: 24px; margin-bottom: 10px;">Confirm ${action}?</div>`,
-    html: `<div style="font-size: 15px; color: #64748b;">Process leave for <strong>${req.employeeName}</strong>?</div>`,
+    return (startDate.getMonth() === selMonth && startDate.getFullYear() === selYear) || 
+           (endDate.getMonth() === selMonth && endDate.getFullYear() === selYear);
+  }
+
+  // Fixed formatting logic for both single days and ranges
+  getFormattedPeriod(period: string): string {
+    if (!period) return 'N/A';
     
-    // CHANGE THIS LINE: 'warning' (orange) -> 'error' (red)
-    icon: isApprove ? 'success' : 'error', 
+    const separator = period.includes(' to ') ? ' to ' : ' - ';
     
-    showCancelButton: true,
-    confirmButtonText: `Yes, ${action}`,
+    // Handle Single Date
+    if (!period.includes(separator)) {
+      const singleDate = new Date(period.trim());
+      return `1 Day (${singleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
+    }
+
+    // Handle Date Range
+    const parts = period.split(separator);
+    const start = new Date(parts[0].trim());
+    const end = new Date(parts[1].trim());
+    
+    const diff = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    return `${diff} ${diff === 1 ? 'Day' : 'Days'} (${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
+  }
+
+  updateStatus(req: any, action: string) {
+    const isApprove = action === 'Approve';
+    Swal.fire({
+      title: `<div style="color: #1a5336; font-weight: 800; font-size: 24px; margin-bottom: 10px;">Confirm ${action}?</div>`,
+      html: `<div style="font-size: 15px; color: #64748b;">Process leave for <strong>${req.employeeName}</strong>?</div>`,
+      icon: isApprove ? 'success' : 'error', 
+      showCancelButton: true,
+      confirmButtonText: `Yes, ${action}`,
       cancelButtonText: 'No, Cancel',
       reverseButtons: true,
       buttonsStyling: false,
@@ -128,19 +162,6 @@ updateStatus(req: any, action: string) {
         });
       }
     });
-  }
-
-  // --- UI HELPERS ---
-
-  getFormattedPeriod(period: string): string {
-    if (!period) return 'N/A';
-    const separator = period.includes(' to ') ? ' to ' : ' - ';
-    if (!period.includes(separator)) return period;
-    const parts = period.split(separator);
-    const start = new Date(parts[0].trim());
-    const end = new Date(parts[1].trim());
-    const diff = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    return `${diff} ${diff === 1 ? 'Day' : 'Days'} (${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
   }
 
   viewDocument(attachment: any) {

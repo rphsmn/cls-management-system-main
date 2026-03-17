@@ -1,16 +1,31 @@
 <main class="history-content-container" *ngIf="currentUser$ | async as currentUser">
   <header class="content-header">
     <div class="title-group">
-      <h1>{{ (currentUser.role.includes('Staff') || currentUser.role === 'It Developer') ? 'My Leave History' : 'Leave Records & History' }}</h1>
+      <h1>
+        {{ (currentUser.role.includes('Staff') || currentUser.role === 'It Developer') 
+           ? 'My Leave History' 
+           : 'Leave Records & History' }}
+      </h1>
       <div class="status-indicator">
         <span class="role-badge">{{ currentUser.role }}</span>
         <span class="sub-tag">Viewing leave application records</span>
       </div>
     </div>
 
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input type="text" [formControl]="searchControl" placeholder="Search employee, ID, or type...">
+    <div class="header-actions">
+      <div class="filter-group">
+        <select [formControl]="monthControl" class="filter-select">
+          <option *ngFor="let m of months" [value]="m.v">{{ m.l }}</option>
+        </select>
+        <select [formControl]="yearControl" class="filter-select">
+          <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+        </select>
+      </div>
+
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" [formControl]="searchControl" placeholder="Search employee, ID, or type...">
+      </div>
     </div>
   </header>
 
@@ -28,6 +43,7 @@
               <th class="col-progress">Approval Progress</th>
             </tr>
           </thead>
+          
           <tbody *ngIf="allReqs.length > 0; else emptyHistory">
             <tr *ngFor="let req of (paginatedRequests$ | async)">
               <td *ngIf="!currentUser.role.includes('Staff') && currentUser.role !== 'It Developer'">
@@ -80,12 +96,22 @@
                     <div class="icon-circle">✓</div>
                     <span class="step-label">Filed</span>
                   </div>
-                  <div class="connector" [class.active]="req.status !== 'Pending'" [class.rejected]="getSupervisorClass(req) === 'rejected'"></div>
+                  
+                  <div class="connector" 
+                    [class.active]="req.status !== 'Pending'" 
+                    [class.rejected]="getSupervisorClass(req) === 'rejected'">
+                  </div>
+
                   <div class="step" [ngClass]="getSupervisorClass(req)">
                     <div class="icon-circle">{{ getSupervisorIcon(req) }}</div>
                     <span class="step-label">Sup</span>
                   </div>
-                  <div class="connector" [class.active]="req.status === 'Approved' || req.status.includes('HR')" [class.rejected]="getHRClass(req) === 'rejected'"></div>
+                  
+                  <div class="connector" 
+                    [class.active]="req.status === 'Approved' || req.status.includes('HR')" 
+                    [class.rejected]="getHRClass(req) === 'rejected'">
+                  </div>
+
                   <div class="step" [ngClass]="getHRClass(req)">
                     <div class="icon-circle">{{ getHRIcon(req) }}</div>
                     <span class="step-label">HR</span>
@@ -108,10 +134,11 @@
         </div>
       </div>
     </ng-container>
+
     <ng-template #emptyHistory>
       <div class="empty-state">
         <div class="empty-icon">🍃</div>
-        <p>No leave records found.</p>
+        <p>No leave records found for the selected period.</p>
       </div>
     </ng-template>
   </div>

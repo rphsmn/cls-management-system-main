@@ -30,13 +30,18 @@ export class FileLeaveComponent {
   showSuccessToast = false;
 
   constructor() {
-    // Syncs user data and requests to show real-time Available/Pending balances
     this.liveCredits$ = combineLatest([
       this.authService.currentUser$,
       this.authService.requests$
     ]).pipe(
       map(([user, allRequests]) => {
         if (!user) return null;
+
+        // Logic to determine if current month is the birth month
+        const isBirthMonth = user.birthDate ? 
+          new Date(user.birthDate).getMonth() === new Date().getMonth() : 
+          false;
+
         const myRequests = allRequests.filter(req => req.employeeName === user.name);
         
         const calc = (type: string, status: 'pending' | 'approved') => {
@@ -53,6 +58,7 @@ export class FileLeaveComponent {
 
         return {
           ...user,
+          isBirthMonth,
           balances: {
             'Paid Leave': { rem: user.credits.paidLeave - calc('Paid Leave', 'approved'), pen: calc('Paid Leave', 'pending') },
             'Sick Leave': { rem: user.credits.sickLeave - calc('Sick Leave', 'approved'), pen: calc('Sick Leave', 'pending') },

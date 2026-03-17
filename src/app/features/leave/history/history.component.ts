@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
-import { Observable, combineLatest, BehaviorSubject, startWith, map } from 'rxjs';
+import { Observable, combineLatest, BehaviorSubject, startWith, map, tap } from 'rxjs';
 import { AuthService, User } from '../../../core/services/auth';
 
 @Component({
@@ -15,10 +15,22 @@ export class HistoryComponent {
   currentUser$: Observable<User | null>;
   allFilteredRequests$: Observable<any[]>;
   paginatedRequests$: Observable<any[]>;
+  
   itemsPerPage = 10;
   private currentPageSubject = new BehaviorSubject<number>(1);
   currentPage$ = this.currentPageSubject.asObservable();
+
   searchControl = new FormControl('');
+  monthControl = new FormControl(new Date().getMonth());
+  yearControl = new FormControl(new Date().getFullYear());
+
+  months = [
+    { v: 0, l: 'Jan' }, { v: 1, l: 'Feb' }, { v: 2, l: 'Mar' }, { v: 3, l: 'Apr' },
+    { v: 4, l: 'May' }, { v: 5, l: 'Jun' }, { v: 6, l: 'Jul' }, { v: 7, l: 'Aug' },
+    { v: 8, l: 'Sep' }, { v: 9, l: 'Oct' }, { v: 10, l: 'Nov' }, { v: 11, l: 'Dec' }
+  ];
+  years = [2024, 2025, 2026];
+  
   expandedReq: any = null;
 
   constructor(private authService: AuthService) {
@@ -27,27 +39,31 @@ export class HistoryComponent {
     this.allFilteredRequests$ = combineLatest([
       this.authService.currentUser$,
       this.authService.requests$,
-      this.searchControl.valueChanges.pipe(startWith(''))
+      this.searchControl.valueChanges.pipe(startWith(''), tap(() => this.currentPageSubject.next(1))),
+      this.monthControl.valueChanges.pipe(startWith(this.monthControl.value), tap(() => this.currentPageSubject.next(1))),
+      this.yearControl.valueChanges.pipe(startWith(this.yearControl.value), tap(() => this.currentPageSubject.next(1)))
     ]).pipe(
-      map(([user, requests, term]) => {
-        if (!user) return [];
+      map(([user, requests, term, selMonth, selYear]) => {
+        if (!user || !requests) return [];
         const s = term?.toLowerCase() || '';
-        
-        // Normalize role for comparison
         const role = user.role?.toUpperCase() || '';
 
         return requests.filter(req => {
-          const matches = req.employeeName?.toLowerCase().includes(s) || 
-                          req.companyId?.toLowerCase().includes(s) ||
-                          req.type?.toLowerCase().includes(s);
+          // 1. Search Filter
+          const matchesSearch = req.employeeName?.toLowerCase().includes(s) || 
+                                req.companyId?.toLowerCase().includes(s) ||
+                                req.type?.toLowerCase().includes(s);
 
-          // If User is Staff or Dev, they only see their own records
+          if (!matchesSearch) return false;
+
+          // 2. Month/Year Filter (Overlaps with Leave Period)
+          if (!this.checkPeriodMatch(req.period, Number(selMonth), Number(selYear))) return false;
+
+          // 3. Role-based Permission
           if (role.includes('STAFF') || role.includes('DEV') || role.includes('IT')) {
-             return matches && req.companyId === user.id;
+             return req.companyId === user.id;
           }
-          
-          // Managers/HR see all filtered records
-          return matches;
+          return true;
         });
       })
     );
@@ -57,37 +73,30 @@ export class HistoryComponent {
     );
   }
 
-  /**
-   * Updated to match Approvals display style:
-   * Result: "2 Days (Mar 19 - Mar 20)"
-   */
+  private checkPeriodMatch(period: string, selMonth: number, selYear: number): boolean {
+    if (!period) return false;
+    const sep = period.includes(' to ') ? ' to ' : ' - ';
+    const dates = period.split(sep);
+    const start = new Date(dates[0].trim());
+    const end = dates[1] ? new Date(dates[1].trim()) : start;
+
+    return (start.getMonth() === selMonth && start.getFullYear() === selYear) || 
+           (end.getMonth() === selMonth && end.getFullYear() === selYear);
+  }
+
   getFormattedPeriod(period: string): string {
     if (!period) return 'N/A';
-    
     const sep = period.includes(' to ') ? ' to ' : ' - ';
-    
-    // If it's a single date string without a separator
     if (!period.includes(sep)) {
-      const singleDate = new Date(period);
-      if (isNaN(singleDate.getTime())) return period;
+      const singleDate = new Date(period.trim());
       return `1 Day (${singleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
     }
-
     const parts = period.split(sep);
     const start = new Date(parts[0].trim());
     const end = new Date(parts[1].trim());
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return period;
-
     const diff = Math.ceil(Math.abs(end.getTime() - start.getTime()) / 86400000) + 1;
-    
-    const startFmt = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const endFmt = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-    return `${diff} ${diff === 1 ? 'Day' : 'Days'} (${startFmt} - ${endFmt})`;
+    return `${diff} ${diff === 1 ? 'Day' : 'Days'} (${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
   }
-
-  // --- Status & UI Helpers ---
 
   getSupervisorClass(r: any) { 
     if (r.status === 'Approved' || r.status.includes('HR')) return 'completed';
@@ -128,12 +137,12 @@ export class HistoryComponent {
   }
 
   getLeaveIcon(t: string) { 
-    if (t.includes('Sick')) return '🤒';
-    if (t.includes('Birthday')) return '🎂';
+    const type = t?.toLowerCase() || '';
+    if (type.includes('sick')) return '🤒';
+    if (type.includes('birthday')) return '🎂';
     return '💰'; 
   }
 
-  // --- Pagination Helpers ---
   getTotalPages(t: number) { return Math.ceil(t / this.itemsPerPage) || 1; }
   getStartRange(t: number) { return t === 0 ? 0 : (this.currentPageSubject.value - 1) * this.itemsPerPage + 1; }
   getEndRange(t: number) { return Math.min(this.currentPageSubject.value * this.itemsPerPage, t); }

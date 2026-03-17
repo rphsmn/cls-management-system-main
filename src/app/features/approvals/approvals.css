@@ -1,3 +1,5 @@
+/* approvals.css */
+
 .approvals-container { 
   padding: 40px; 
   width: 95%; 
@@ -11,6 +13,8 @@
   display: flex; 
   justify-content: space-between; 
   align-items: center; 
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .title-group h1 { 
@@ -39,13 +43,44 @@
   font-size: 12px; 
 }
 
+/* Header Actions & Filters */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-select {
+  background: #ffffff;
+  border: 1.5px solid #eef2f6;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a5336;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.filter-select:hover {
+  border-color: #1a5336;
+}
+
 /* Search Box */
 .search-box { 
   display: flex; 
   align-items: center; 
   background: #ffffff; 
   border-radius: 10px; 
-  padding: 10px 18px; 
+  padding: 8px 18px; 
   border: 1.5px solid #eef2f6; 
   box-shadow: 0 2px 8px rgba(0,0,0,0.02); 
   transition: border-color 0.2s ease;
@@ -72,7 +107,7 @@
   border: 1px solid #f1f5f9; 
   box-shadow: 0 10px 25px rgba(0,0,0,0.03); 
   overflow: hidden; 
-  min-height: 780px; 
+  min-height: 600px; 
   display: flex; 
   flex-direction: column; 
 }
@@ -127,6 +162,12 @@
 .period-word { color: #1a5336; font-weight: 800; font-size: 12px; display: block; }
 .period-sub { color: #94a3b8; font-size: 10px; font-weight: 500; }
 
+.reason-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .reason-text { 
   font-size: 13px; 
   line-height: 1.6; 
@@ -137,6 +178,13 @@
 }
 
 .reason-full { font-size: 13px; line-height: 1.6; color: #64748b; }
+
+.reason-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
 
 .see-more { 
   font-size: 10px; 
@@ -166,7 +214,7 @@
   border-color: #cbd5e1;
 }
 
-/* Action Buttons with Hover Animations */
+/* Action Buttons */
 .action-buttons { 
   display: flex; 
   gap: 10px; 
@@ -209,10 +257,6 @@
   transform: translateY(-2px);
 }
 
-.btn-approve:active, .btn-reject:active {
-  transform: translateY(0);
-}
-
 /* Pagination */
 .pagination-footer { 
   margin-top: auto; 
@@ -222,6 +266,32 @@
   padding: 20px 24px; 
   background: #fafbfc; 
   border-top: 1px solid #f1f5f9; 
+}
+
+.rows-select {
+  margin-left: 15px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.rows-select select {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-left: 4px;
+  outline: none;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .btn-pager { 
@@ -246,15 +316,26 @@
   cursor: not-allowed; 
 }
 
-/* Premium SweetAlert Overrides */
+/* Empty State */
+.empty-state {
+  padding: 100px 0;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* SweetAlert Overrides */
 ::ng-deep .swal-premium-popup { 
   border-radius: 24px !important; 
   padding: 2.5em !important; 
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important; 
-  border: none !important; 
 }
 
-/* Fixed spacing for popup buttons */
 ::ng-deep .swal-button-container {
   display: flex !important;
   gap: 15px !important;
@@ -268,16 +349,7 @@
   padding: 14px 32px !important; 
   border-radius: 12px !important; 
   font-weight: 800 !important; 
-  font-size: 14px !important; 
-  text-transform: uppercase !important; 
-  border: none !important; 
-  cursor: pointer !important; 
-  transition: all 0.2s ease !important;
-}
-
-::ng-deep .swal-confirm-mint:hover {
-  background-color: #14422b !important;
-  transform: scale(1.02);
+  text-transform: uppercase !important;
 }
 
 ::ng-deep .swal-confirm-danger { 
@@ -286,16 +358,7 @@
   padding: 14px 32px !important; 
   border-radius: 12px !important; 
   font-weight: 800 !important; 
-  font-size: 14px !important; 
-  text-transform: uppercase !important; 
-  border: none !important; 
-  cursor: pointer !important; 
-  transition: all 0.2s ease !important;
-}
-
-::ng-deep .swal-confirm-danger:hover {
-  background-color: #dc2626 !important;
-  transform: scale(1.02);
+  text-transform: uppercase !important;
 }
 
 ::ng-deep .swal-cancel-outline { 
@@ -304,13 +367,5 @@
   border: 2px solid #e2e8f0 !important; 
   padding: 14px 32px !important; 
   border-radius: 12px !important; 
-  font-weight: 700 !important; 
-  font-size: 14px !important; 
-  cursor: pointer !important; 
-  transition: all 0.2s ease !important;
-}
-
-::ng-deep .swal-cancel-outline:hover {
-  background-color: #f8fafc !important;
-  border-color: #cbd5e1 !important;
+  font-weight: 700 !important;
 }

@@ -8,9 +8,20 @@
       </div>
     </div>
 
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input type="text" [formControl]="searchControl" placeholder="Search employee, ID, or type...">
+    <div class="header-actions">
+      <div class="filter-group">
+        <select [formControl]="monthControl" class="filter-select">
+          <option *ngFor="let m of months" [value]="m.v">{{ m.l }}</option>
+        </select>
+        <select [formControl]="yearControl" class="filter-select">
+          <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+        </select>
+      </div>
+
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" [formControl]="searchControl" placeholder="Search employee, ID, or type...">
+      </div>
     </div>
   </header>
 
@@ -44,7 +55,7 @@
               <td>
                 <div class="period-stack">
                   <span class="period-word">{{ getFormattedPeriod(req.period) }}</span>
-                  <span class="period-sub">{{ req.period }}</span>
+                  <span class="period-sub">Filed: {{ req.dateFiled | date:'MMM d, y' }}</span>
                 </div>
               </td>
               <td>
@@ -96,7 +107,7 @@
     <ng-template #emptyApprovals>
       <div class="empty-state">
         <div class="empty-icon">🍃</div>
-        <p>No pending requests found.</p>
+        <p>No pending requests found for this month.</p>
       </div>
     </ng-template>
   </div>

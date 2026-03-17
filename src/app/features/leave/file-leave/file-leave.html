@@ -39,7 +39,9 @@
             <option value="" disabled selected>Select type of leave</option>
             <option value="Paid Leave">Paid Leave</option>
             <option value="Sick Leave">Sick Leave</option>
-            <option value="Birthday Leave">Birthday Leave</option>
+            <option value="Birthday Leave" [disabled]="!currentUser.isBirthMonth">
+              Birthday Leave {{ !currentUser.isBirthMonth ? '(Only available on birth month)' : '' }}
+            </option>
           </select>
         </div>
 
