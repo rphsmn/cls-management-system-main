@@ -21,6 +21,8 @@ export class FileLeaveComponent implements OnInit {
   minDate: string = '';
   totalDays: number = 0;
   isOverBalance: boolean = false;
+  isInsufficientNotice: boolean = false;
+  noticeRequired: number = 0;
   
   leaveRequest = {
     type: '',
@@ -34,8 +36,12 @@ export class FileLeaveComponent implements OnInit {
   showSuccessToast = false;
 
   constructor() {
+    // Set minDate to Today: March 18, 2026
     const today = new Date();
-    this.minDate = today.toISOString().split('T')[0];
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    this.minDate = `${year}-${month}-${day}`;
 
     this.liveCredits$ = combineLatest([
       this.authService.currentUser$,
@@ -48,29 +54,25 @@ export class FileLeaveComponent implements OnInit {
 
         const myRequests = allRequests.filter(req => req.employeeName === user.name);
         
-const calc = (type: string, status: 'pending' | 'approved') => {
-  return myRequests
-    .filter(r => {
-      const isSameType = r.type === type;
-      const rStatus = r.status.toLowerCase();
-      
-      if (status === 'approved') {
-        return isSameType && rStatus === 'approved';
-      } else {
-        // This captures "Pending", "pending", "Pending HR", etc.
-        return isSameType && (rStatus.includes('pending') || rStatus.includes('hr'));
-      }
-    })
-    .reduce((sum, r) => {
-      if (r.period?.includes(' - ')) {
-        const dates = r.period.split(' - ');
-        const start = new Date(dates[0]).getTime();
-        const end = new Date(dates[1]).getTime();
-        return sum + (Math.ceil(Math.abs(end - start) / 86400000) + 1);
-      }
-      return sum + 1;
-    }, 0);
-};
+        const calc = (type: string, status: 'pending' | 'approved') => {
+          return myRequests
+            .filter(r => {
+              const isSameType = r.type === type;
+              const rStatus = r.status.toLowerCase();
+              return status === 'approved' 
+                ? (isSameType && rStatus === 'approved')
+                : (isSameType && (rStatus.includes('pending') || rStatus.includes('hr')));
+            })
+            .reduce((sum, r) => {
+              if (r.period?.includes(' - ')) {
+                const dates = r.period.split(' - ');
+                const start = new Date(dates[0]).getTime();
+                const end = new Date(dates[1]).getTime();
+                return sum + (Math.ceil(Math.abs(end - start) / 86400000) + 1);
+              }
+              return sum + 1;
+            }, 0);
+        };
 
         return {
           ...user,
@@ -88,24 +90,62 @@ const calc = (type: string, status: 'pending' | 'approved') => {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['date']) {
-        this.leaveRequest.startDate = params['date'];
-        this.leaveRequest.endDate = params['date'];
+        const selectedDate = params['date'];
+        // Strict Enforcement: If date from calendar is in the past, reset to today
+        if (selectedDate < this.minDate) {
+          this.leaveRequest.startDate = this.minDate;
+          this.leaveRequest.endDate = this.minDate;
+        } else {
+          this.leaveRequest.startDate = selectedDate;
+          this.leaveRequest.endDate = selectedDate;
+        }
         this.calculateDays();
       }
     });
   }
 
   calculateDays() {
+    // 1. Double-check for past dates and reset them if they somehow got selected
+    if (this.leaveRequest.startDate && this.leaveRequest.startDate < this.minDate) {
+      this.leaveRequest.startDate = this.minDate;
+    }
+    if (this.leaveRequest.endDate && this.leaveRequest.endDate < this.leaveRequest.startDate) {
+      this.leaveRequest.endDate = this.leaveRequest.startDate;
+    }
+
     if (this.leaveRequest.startDate && this.leaveRequest.endDate) {
       const start = new Date(this.leaveRequest.startDate);
       const end = new Date(this.leaveRequest.endDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       const diffTime = end.getTime() - start.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
       this.totalDays = diffDays > 0 ? diffDays : 0;
+
+      const noticeTime = start.getTime() - today.getTime();
+      const noticeDays = Math.ceil(noticeTime / (1000 * 60 * 60 * 24));
+
+      // Notice rules apply ONLY to "Paid Leave"
+      if (this.leaveRequest.type === 'Paid Leave') {
+        if (this.totalDays <= 2) {
+          this.noticeRequired = 3;
+        } else if (this.totalDays === 3) {
+          this.noticeRequired = 5;
+        } else {
+          this.noticeRequired = 7;
+        }
+        this.isInsufficientNotice = noticeDays < this.noticeRequired;
+      } else {
+        this.isInsufficientNotice = false;
+        this.noticeRequired = 0;
+      }
+      
       this.checkBalance();
     } else {
       this.totalDays = 0;
       this.isOverBalance = false;
+      this.isInsufficientNotice = false;
     }
   }
 
@@ -121,12 +161,7 @@ const calc = (type: string, status: 'pending' | 'approved') => {
 
   onFileSelected(event: any) {
     const file = event.target.files[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      alert('File too large (Max 2MB)');
-      event.target.value = '';
-      return;
-    }
+    if (!file || file.size > 2 * 1024 * 1024) return;
     this.fileName = file.name;
     const reader = new FileReader();
     reader.onload = () => {
@@ -141,7 +176,7 @@ const calc = (type: string, status: 'pending' | 'approved') => {
   }
 
   onSubmit() {
-    if (this.isOverBalance || this.totalDays <= 0) return;
+    if (this.isOverBalance || this.isInsufficientNotice || this.totalDays <= 0) return;
 
     const period = this.leaveRequest.startDate === this.leaveRequest.endDate 
       ? this.leaveRequest.startDate 
@@ -152,7 +187,8 @@ const calc = (type: string, status: 'pending' | 'approved') => {
       period: period,
       reason: this.leaveRequest.reason,
       dateFiled: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      attachment: this.selectedFile
+      attachment: this.selectedFile,
+      status: 'Pending'
     };
 
     this.authService.addRequest(newRequest);

@@ -1,107 +1,92 @@
-<main class="calendar-wrapper">
+<div class="calendar-wrapper">
+  <header class="calendar-header">
+    <div class="title-section">
+      <h1>Company Calendar <span class="date-display">{{ currentDate | date:'MMMM yyyy' }}</span></h1>
+    </div>
+    <div class="nav-controls">
+      <button class="nav-btn" (click)="prevMonth()">‹</button>
+      <button class="today-btn" (click)="goToToday()">Today</button>
+      <button class="nav-btn" (click)="nextMonth()">›</button>
+    </div>
+  </header>
+
   <div class="calendar-layout">
-    <div class="calendar-main">
-      <header class="calendar-header">
-        <div class="header-info">
-          <h1>Company Calendar</h1>
-          <div class="breadcrumb-nav">
-            <span class="role-badge">Global Schedule</span>
-            <span class="date-display">{{ viewDate | date:'MMMM yyyy' }}</span>
-          </div>
-        </div>
-
-        <div class="nav-controls">
-          <button (click)="changeMonth(-1)" class="nav-btn">‹</button>
-          <button (click)="viewDate = today; generateCalendar()" class="today-btn">Today</button>
-          <button (click)="changeMonth(1)" class="nav-btn">›</button>
-        </div>
-      </header>
-
-      <div class="calendar-card">
-        <div class="weekday-grid">
-          <div *ngFor="let day of weekDays" class="weekday-label">{{ day }}</div>
-        </div>
-
-        <div class="days-grid">
-          <div *ngFor="let p of paddingDays" class="day-cell empty"></div>
-          
-          <div *ngFor="let day of daysInMonth" 
-               class="day-cell" 
-               (click)="openDayDetails(day)"
-               [class.is-today]="isToday(day)">
-            <div class="day-header">
-              <span class="day-number">{{ day }}</span>
-            </div>
-            <div class="day-content">
-              <div *ngIf="getEvent(day) as event" 
-                   class="holiday-pill" 
-                   [ngClass]="[event.type, getRegionClass(event.title)]">
-                {{ event.title }}
-              </div>
-            </div>
+    <section class="calendar-card">
+      <div class="weekday-grid">
+        <div *ngFor="let day of weekdays" class="weekday-label">{{ day }}</div>
+      </div>
+      <div class="days-grid">
+        <div *ngFor="let day of days" 
+             class="day-cell" 
+             [class.empty]="day.empty"
+             [class.is-today]="day.isToday"
+             [class.is-past]="day.isPast"
+             (click)="selectDay(day)">
+          <span class="day-number" *ngIf="!day.empty">{{ day.day }}</span>
+          <div class="holiday-pill" *ngIf="day.holiday" [className]="'holiday-pill region-' + day.holiday.region">
+            {{ day.holiday.name }}
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <aside class="calendar-sidebar">
+    <aside class="sidebar">
       <div class="sidebar-card">
         <h3>Holiday Types</h3>
-<ul class="legend-list">
-  <li><span class="dot regular"></span> 
-      <div><span class="l-label">Regular Holiday</span><span class="l-desc">Statutory Off</span></div></li>
-  <li><span class="dot special-non"></span> 
-      <div><span class="l-label">Special Non-Working</span><span class="l-desc">Observed Day</span></div></li>
-  <li><span class="dot special-work"></span> 
-      <div><span class="l-label">Special Working</span><span class="l-desc">Work Day</span></div></li>
-  <li><span class="dot company"></span> 
-      <div><span class="l-label">Company Event</span><span class="l-desc">Internal Sync</span></div></li>
-</ul>
+        <ul class="legend-list">
+          <li><span class="dot regular"></span> 
+              <div><span class="l-label">Regular Holiday</span><span class="l-desc">Statutory Off</span></div></li>
+          <li><span class="dot special-non"></span> 
+              <div><span class="l-label">Special Non-Working</span><span class="l-desc">Observed Day</span></div></li>
+          <li><span class="dot special-work"></span> 
+              <div><span class="l-label">Special Working</span><span class="l-desc">Work Day</span></div></li>
+          <li><span class="dot company"></span> 
+              <div><span class="l-label">Company Event</span><span class="l-desc">Internal Sync</span></div></li>
+        </ul>
       </div>
 
       <div class="sidebar-card">
         <h3>Regions</h3>
         <ul class="legend-list">
-          <li><span class="region-bar ph"></span> <div><span class="l-label">Philippines</span></div></li>
-          <li><span class="region-bar au"></span> <div><span class="l-label">Australia</span></div></li>
-          <li><span class="region-bar both"></span> <div><span class="l-label">Shared PH/AU</span></div></li>
+          <li><span class="region-bar ph"></span> <span class="l-label">Philippines</span></li>
+          <li><span class="region-bar au"></span> <span class="l-label">Australia</span></li>
+          <li><span class="region-bar both"></span> <span class="l-label">Both Regions</span></li>
         </ul>
-        <div class="sidebar-footer">
-          <p>PH: Philippines | AU: Australia</p>
-        </div>
       </div>
     </aside>
   </div>
+</div>
 
-  <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+<div class="modal-overlay" *ngIf="showModal" (click)="showModal = false">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-body" *ngIf="selectedDay">
       <div class="modal-header">
-        <span class="modal-date">{{ viewDate | date:'MMMM' }} {{ selectedDay }}, {{ viewDate | date:'yyyy' }}</span>
-        <button class="close-btn" (click)="closeModal()">×</button>
+        <span class="modal-date">{{ selectedDay.date | date:'fullDate' }}</span>
+        <button class="close-btn" (click)="showModal = false">✕</button>
       </div>
-      
-      <div class="modal-body">
-        <div *ngIf="selectedEvent; else noEvent">
-          <div class="event-tag" [ngClass]="[selectedEvent.type, getRegionClass(selectedEvent.title)]">
-            {{ selectedEvent.type | uppercase }}
-          </div>
-          <h2>{{ selectedEvent.title }}</h2>
-          <p class="event-desc">{{ selectedEvent.description || 'No additional details provided for this date.' }}</p>
-        </div>
-        
-        <ng-template #noEvent>
-          <div class="empty-modal-state">
-            <div class="empty-icon">📅</div>
-            <h3>Regular Work Day</h3>
-            <p>No holidays or events scheduled for this date.</p>
-          </div>
-        </ng-template>
+
+      <div class="notice-banner" *ngIf="isNoticeWarning && !selectedDay.holiday">
+        <span class="icon">ℹ️</span>
+        <p>This date is within the 3-day advance notice window. Managerial approval may be required for short-notice filings.</p>
       </div>
+
+      <div class="event-tag" *ngIf="selectedDay.holiday" [className]="'event-tag region-' + selectedDay.holiday.region">
+        {{ selectedDay.holiday.type | uppercase }}
+      </div>
+
+      <h2>{{ selectedDay.holiday?.name || 'Work Day' }}</h2>
+      <p class="event-desc">
+        {{ selectedDay.holiday ? 'This is an official holiday for ' + (selectedDay.holiday.region | uppercase) + '.' : 'Standard working day. You can file a leave request for this date.' }}
+      </p>
 
       <div class="modal-footer">
-        <button class="action-btn secondary" (click)="closeModal()">Close</button>
-        <button class="action-btn primary" (click)="requestLeave()">Request Leave</button>
+        <button class="action-btn secondary" (click)="showModal = false">Close</button>
+        <button class="action-btn primary" 
+                (click)="goToFiling(selectedDay.date)"
+                *ngIf="!selectedDay.holiday">
+          File Leave
+        </button>
       </div>
     </div>
   </div>
-</main>
+</div>

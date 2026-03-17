@@ -9,7 +9,7 @@ import { FileLeaveComponent } from './features/leave/file-leave/file-leave';
 import { HistoryComponent } from './features/leave/history/history.component';
 import { ApprovalsComponent } from './features/approvals/approvals';
 import { ProfileComponent } from './features/profile/profile';
-import { Calendar } from './features/calendar/calendar';
+import { CalendarComponent } from './features/calendar/calendar'; // Updated Import
 
 export const routes: Routes = [
   { 
@@ -37,8 +37,7 @@ export const routes: Routes = [
       { path: 'history', component: HistoryComponent },
       { path: 'approvals', component: ApprovalsComponent },
       { path: 'profile', component: ProfileComponent },
-      // Added this to prevent the sidebar link from breaking and redirecting to login
-      { path: 'calendar', component: Calendar },
+      { path: 'calendar', component: CalendarComponent }, // Updated Component Reference
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

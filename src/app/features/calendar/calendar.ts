@@ -1,129 +1,111 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-
-interface CalendarEvent {
-  title: string;
-  type: 'regular' | 'special-non' | 'special-work' | 'company';
-  description?: string;
-}
+import { RouterModule, Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth';
+import { Observable, map } from 'rxjs';
 
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './calendar.html',
-  styleUrl: './calendar.css'
+  styleUrls: ['./calendar.css']
 })
-export class Calendar implements OnInit {
+export class CalendarComponent implements OnInit {
+  private authService = inject(AuthService);
   private router = inject(Router);
 
-  today: Date = new Date();
-  viewDate: Date = new Date(); 
-  daysInMonth: number[] = [];
-  paddingDays: number[] = []; 
-  weekDays: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  currentDate = new Date();
+  days: any[] = [];
+  weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  selectedDay: any = null;
+  showModal = false;
+  isNoticeWarning = false;
+  suggestedNoticeDays = 3;
 
-  selectedDay: number | null = null;
-  selectedEvent: CalendarEvent | null = null;
-  showModal: boolean = false;
+  holidays = [
+    { date: '2026-03-09', name: 'Labour Day (VIC/TAS)', region: 'au', type: 'regular' },
+    { date: '2026-03-17', name: 'St. Patrick\'s Day', region: 'au', type: 'special-non' },
+    { date: '2026-03-23', name: 'Otago Anniversary', region: 'au', type: 'regular' },
+    { date: '2026-04-02', name: 'Maundy Thursday', region: 'ph', type: 'regular' },
+    { date: '2026-04-03', name: 'Good Friday', region: 'both', type: 'regular' },
+    { date: '2026-04-04', name: 'Black Saturday', region: 'ph', type: 'special-non' },
+    { date: '2026-04-06', name: 'Easter Monday', region: 'au', type: 'regular' },
+    { date: '2026-04-09', name: 'Araw ng Kagitingan', region: 'ph', type: 'regular' }
+  ];
 
-  holidays: { [key: string]: CalendarEvent } = {
-    '2026-01-01': { title: 'PH/AU: New Year\'s Day', type: 'regular' },
-    '2026-01-22': { title: 'AU: Day of Mourning (Bondi Victims)', type: 'special-non' },
-    '2026-01-26': { title: 'AU: Australia Day', type: 'regular' },
-    '2026-01-29': { title: 'PH: Lunar New Year', type: 'special-non' },
-    '2026-02-25': { title: 'PH: EDSA Day', type: 'special-work' },
-    '2026-03-02': { title: 'AU: Labour Day (WA)', type: 'regular' },
-    '2026-03-09': { title: 'AU: Labour Day (VIC) / 8 Hours Day (TAS)', type: 'regular' },
-    '2026-03-21': { title: 'AU: Harmony Day', type: 'special-non' },
-    '2026-03-23': { title: 'AU: Labour Day (Christmas Island)', type: 'regular' },
-    '2026-04-02': { title: 'PH: Maundy Thursday', type: 'regular' },
-    '2026-04-03': { title: 'PH/AU: Good Friday', type: 'regular' },
-    '2026-04-04': { title: 'PH/AU: Holy Saturday', type: 'special-non' },
-    '2026-04-05': { title: 'AU: Easter Sunday', type: 'regular' },
-    '2026-04-06': { title: 'AU: Easter Monday', type: 'regular' },
-    '2026-04-09': { title: 'PH: Araw ng Kagitingan', type: 'regular' },
-    '2026-04-25': { title: 'AU: ANZAC Day', type: 'regular' },
-    '2026-05-01': { title: 'PH: Labor Day', type: 'regular' },
-    '2026-05-04': { title: 'AU: May Day (NT) / Labour Day (QLD)', type: 'regular' },
-    '2026-06-08': { title: 'AU: King\'s Birthday (Most Regions)', type: 'regular' },
-    '2026-06-12': { title: 'PH: Independence Day', type: 'regular' },
-    '2026-08-21': { title: 'PH: Ninoy Aquino Day', type: 'special-non' },
-    '2026-08-31': { title: 'PH: National Heroes Day', type: 'regular' },
-    '2026-09-28': { title: 'AU: King\'s Birthday (WA)', type: 'regular' },
-    '2026-10-05': { title: 'AU: King\'s Birthday (QLD) / Labour Day (ACT, NSW, SA)', type: 'regular' },
-    '2026-11-01': { title: 'PH: All Saints\' Day', type: 'special-non' },
-    '2026-11-02': { title: 'PH: All Souls\' Day', type: 'special-non' },
-    '2026-11-11': { title: 'AU: Remembrance Day', type: 'special-non' },
-    '2026-11-30': { title: 'PH: Bonifacio Day', type: 'regular' },
-    '2026-12-08': { title: 'PH: Feast of the Immaculate Conception', type: 'special-non' },
-    '2026-12-24': { title: 'AU: Christmas Eve', type: 'special-work' },
-    '2026-12-25': { title: 'PH/AU: Christmas Day', type: 'regular' },
-    '2026-12-26': { title: 'AU: Boxing Day', type: 'regular' },
-    '2026-12-30': { title: 'PH: Rizal Day', type: 'regular' },
-    '2026-12-31': { title: 'AU: New Year\'s Eve', type: 'special-work' }
-  };
-
-  ngOnInit(): void {
+  ngOnInit() {
     this.generateCalendar();
   }
 
   generateCalendar() {
-    const year = this.viewDate.getFullYear();
-    const month = this.viewDate.getMonth();
-    const firstDayIndex = new Date(year, month, 1).getDay();
-    const totalDays = new Date(year, month + 1, 0).getDate();
-    this.paddingDays = Array(firstDayIndex).fill(0);
-    this.daysInMonth = Array.from({ length: totalDays }, (_, i) => i + 1);
-  }
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Set 'today' to midnight for accurate comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  getEvent(day: number): CalendarEvent | null {
-    const year = this.viewDate.getFullYear();
-    const month = String(this.viewDate.getMonth() + 1).padStart(2, '0');
-    const date = String(day).padStart(2, '0');
-    const key = `${year}-${month}-${date}`;
-    return this.holidays[key] || null;
-  }
+    this.days = [];
 
-  getRegionClass(title: string): string {
-    if (title.includes('PH/AU')) return 'region-both';
-    if (title.includes('PH:')) return 'region-ph';
-    if (title.includes('AU:')) return 'region-au';
-    return 'region-company';
-  }
+    // Fill empty slots
+    for (let i = 0; i < firstDay; i++) {
+      this.days.push({ empty: true });
+    }
 
-  openDayDetails(day: number) {
-    this.selectedDay = day;
-    this.selectedEvent = this.getEvent(day);
-    this.showModal = true;
-  }
-
-  closeModal() {
-    this.showModal = false;
-    this.selectedDay = null;
-    this.selectedEvent = null;
-  }
-
-  requestLeave() {
-    if (this.selectedDay) {
-      const year = this.viewDate.getFullYear();
-      const month = String(this.viewDate.getMonth() + 1).padStart(2, '0');
-      const day = String(this.selectedDay).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
-      this.router.navigate(['/file-leave'], { queryParams: { date: dateStr } });
-      this.closeModal();
+    // Fill actual days
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dateObj = new Date(year, month, i);
+      const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
+      const holiday = this.holidays.find(h => h.date === dateStr);
+      
+      this.days.push({
+        day: i,
+        date: dateStr,
+        holiday: holiday,
+        isToday: today.toDateString() === dateObj.toDateString(),
+        isPast: dateObj < today // Flag past dates
+      });
     }
   }
 
-  changeMonth(delta: number) {
-    this.viewDate = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth() + delta, 1);
+  selectDay(day: any) {
+    // BLOCK clicks if the day is empty or in the past
+    if (day.empty || day.isPast) return;
+
+    const selectedDate = new Date(day.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffTime = selectedDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    this.isNoticeWarning = diffDays < this.suggestedNoticeDays && diffDays >= 0;
+
+    this.selectedDay = day;
+    this.showModal = true;
+  }
+
+  prevMonth() {
+    this.currentDate.setMonth(this.currentDate.getMonth() - 1);
     this.generateCalendar();
   }
 
-  isToday(day: number): boolean {
-    return day === this.today.getDate() && 
-           this.viewDate.getMonth() === this.today.getMonth() && 
-           this.viewDate.getFullYear() === this.today.getFullYear();
+  nextMonth() {
+    this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+    this.generateCalendar();
+  }
+
+  goToToday() {
+    this.currentDate = new Date();
+    this.generateCalendar();
+  }
+
+  goToFiling(date: string) {
+    this.router.navigate(['/file-leave'], { queryParams: { date } });
   }
 }
