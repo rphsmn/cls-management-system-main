@@ -68,7 +68,7 @@
                       {{ expandedReq === req ? 'Collapse ↑' : 'Read More ↓' }}
                     </span>
                     <div class="doc-actions" *ngIf="req.attachment">
-                      <button (click)="viewDocument(req.attachment)" class="doc-link-btn">👁️ View</button>
+                      <button (click)="viewDocument(req.attachment)" class="doc-link-btn">👁️ View Doc</button>
                     </div>
                   </div>
                 </div>
@@ -107,7 +107,7 @@
     <ng-template #emptyApprovals>
       <div class="empty-state">
         <div class="empty-icon">🍃</div>
-        <p>No pending requests found for this month.</p>
+        <p>No pending requests found for this selection.</p>
       </div>
     </ng-template>
   </div>

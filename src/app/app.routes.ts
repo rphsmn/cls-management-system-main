@@ -9,7 +9,8 @@ import { FileLeaveComponent } from './features/leave/file-leave/file-leave';
 import { HistoryComponent } from './features/leave/history/history.component';
 import { ApprovalsComponent } from './features/approvals/approvals';
 import { ProfileComponent } from './features/profile/profile';
-import { CalendarComponent } from './features/calendar/calendar'; // Updated Import
+import { CalendarComponent } from './features/calendar/calendar';
+import { EmployeeStatusComponent } from './features/employees/employees';
 
 export const routes: Routes = [
   { 
@@ -37,7 +38,8 @@ export const routes: Routes = [
       { path: 'history', component: HistoryComponent },
       { path: 'approvals', component: ApprovalsComponent },
       { path: 'profile', component: ProfileComponent },
-      { path: 'calendar', component: CalendarComponent }, // Updated Component Reference
+      { path: 'calendar', component: CalendarComponent },
+      { path: 'employees', component: EmployeeStatusComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

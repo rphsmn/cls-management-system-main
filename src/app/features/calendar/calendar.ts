@@ -2,7 +2,6 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
-import { Observable, map } from 'rxjs';
 
 @Component({
   selector: 'app-calendar',
@@ -42,50 +41,56 @@ export class CalendarComponent implements OnInit {
   generateCalendar() {
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
-    
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
-    // Set 'today' to midnight for accurate comparison
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const allRequests = (this.authService as any).requestsSubject?.value || [];
+
     this.days = [];
 
-    // Fill empty slots
     for (let i = 0; i < firstDay; i++) {
       this.days.push({ empty: true });
     }
 
-    // Fill actual days
     for (let i = 1; i <= daysInMonth; i++) {
       const dateObj = new Date(year, month, i);
       const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
       const holiday = this.holidays.find(h => h.date === dateStr);
       
+      const awayCount = allRequests.filter((r: any) => 
+        r.status === 'Approved' && this.isDateInPeriod(dateObj, r.period)
+      ).length;
+
       this.days.push({
         day: i,
         date: dateStr,
         holiday: holiday,
+        awayCount: awayCount,
         isToday: today.toDateString() === dateObj.toDateString(),
-        isPast: dateObj < today // Flag past dates
+        isPast: dateObj < today 
       });
     }
   }
 
-  selectDay(day: any) {
-    // BLOCK clicks if the day is empty or in the past
-    if (day.empty || day.isPast) return;
+  private isDateInPeriod(target: Date, period: string): boolean {
+    if (!period) return false;
+    const parts = period.split(period.includes(' to ') ? ' to ' : ' - ');
+    const start = new Date(parts[0]);
+    const end = parts[1] ? new Date(parts[1]) : start;
+    start.setHours(0,0,0,0);
+    end.setHours(23,59,59,999);
+    return target >= start && target <= end;
+  }
 
+  selectDay(day: any) {
+    if (day.empty || day.isPast) return;
     const selectedDate = new Date(day.date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    const diffTime = selectedDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+    const diffDays = Math.ceil((selectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     this.isNoticeWarning = diffDays < this.suggestedNoticeDays && diffDays >= 0;
-
     this.selectedDay = day;
     this.showModal = true;
   }

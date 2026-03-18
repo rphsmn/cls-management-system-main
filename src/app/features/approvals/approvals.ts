@@ -45,7 +45,7 @@ export class ApprovalsComponent {
       this.monthControl.valueChanges.pipe(startWith(this.monthControl.value), tap(() => this.currentPageSubject.next(1))),
       this.yearControl.valueChanges.pipe(startWith(this.yearControl.value), tap(() => this.currentPageSubject.next(1)))
     ]).pipe(
-      map(([user, allRequests, searchTerm, selMonth, selYear]) => {
+      map(([user, allRequests, searchTerm, selMonth, selYear]: [User | null, any[], string | null, number | null, number | null]) => {
         if (!user || !allRequests) return [];
         
         const term = searchTerm?.toLowerCase().trim() || '';

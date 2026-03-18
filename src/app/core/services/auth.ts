@@ -38,6 +38,8 @@ export class AuthService {
   ];
 
   private usersDatabase: User[] = [];
+  private usersDatabaseSubject = new BehaviorSubject<User[]>([]);
+  usersDatabase$ = this.usersDatabaseSubject.asObservable();
 
   public currentUserSubject = new BehaviorSubject<User | null>(this.getInitialUser());
   currentUser$ = this.currentUserSubject.asObservable();
@@ -58,6 +60,7 @@ export class AuthService {
       this.usersDatabase = [...this.defaultUsers];
       this.saveUsersDatabase();
     }
+    this.usersDatabaseSubject.next(this.usersDatabase);
   }
 
   private saveUsersDatabase() {
@@ -187,5 +190,10 @@ export class AuthService {
   private saveRequests(requests: any[]) {
     this.requestsSubject.next(requests);
     localStorage.setItem(this.REQ_KEY, JSON.stringify(requests));
+  }
+
+  // Public synchronous method to get current requests
+  getRequestsSync(): any[] {
+    return this.requestsSubject.value;
   }
 }

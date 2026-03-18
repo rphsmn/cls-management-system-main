@@ -8,7 +8,7 @@
       </h1>
       <div class="status-indicator">
         <span class="role-badge">{{ currentUser.role }}</span>
-        <span class="sub-tag">Viewing leave application records</span>
+        <span class="sub-tag">Archive of filed applications</span>
       </div>
     </div>
 
@@ -21,7 +21,6 @@
           <option *ngFor="let y of years" [value]="y">{{ y }}</option>
         </select>
       </div>
-
       <div class="search-box">
         <span class="search-icon">🔍</span>
         <input type="text" [formControl]="searchControl" placeholder="Search employee, ID, or type...">
@@ -97,25 +96,17 @@
                     <span class="step-label">Filed</span>
                   </div>
                   
-                  <div class="connector" 
-                    [class.active]="req.status !== 'Pending'" 
-                    [class.rejected]="getSupervisorClass(req) === 'rejected'">
-                  </div>
+                  <ng-container *ngFor="let stepName of getSteps(req); let i = index">
+                    <div class="connector" 
+                         [class.active]="getStepStatus(req, i) === 'completed'" 
+                         [class.rejected]="getStepStatus(req, i) === 'rejected'">
+                    </div>
 
-                  <div class="step" [ngClass]="getSupervisorClass(req)">
-                    <div class="icon-circle">{{ getSupervisorIcon(req) }}</div>
-                    <span class="step-label">Sup</span>
-                  </div>
-                  
-                  <div class="connector" 
-                    [class.active]="req.status === 'Approved' || req.status.includes('HR')" 
-                    [class.rejected]="getHRClass(req) === 'rejected'">
-                  </div>
-
-                  <div class="step" [ngClass]="getHRClass(req)">
-                    <div class="icon-circle">{{ getHRIcon(req) }}</div>
-                    <span class="step-label">HR</span>
-                  </div>
+                    <div class="step" [ngClass]="getStepStatus(req, i)">
+                      <div class="icon-circle">{{ getStepIcon(req, i) }}</div>
+                      <span class="step-label">{{ stepName }}</span>
+                    </div>
+                  </ng-container>
                 </div>
               </td>
             </tr>
@@ -125,6 +116,13 @@
         <div class="pagination-footer" *ngIf="allReqs.length > 0">
           <div class="pagination-left">
               Showing <strong>{{ getStartRange(allReqs.length) }}</strong> - <strong>{{ getEndRange(allReqs.length) }}</strong> of <strong>{{ allReqs.length }}</strong>
+              <span class="rows-select">
+                Rows:
+                <select (change)="onItemsPerPageChange($event)">
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                </select>
+              </span>
           </div>
           <div class="pagination-controls" *ngIf="currentPage$ | async as curPage">
             <button class="btn-pager" (click)="prevPage()" [disabled]="curPage === 1">Previous</button>

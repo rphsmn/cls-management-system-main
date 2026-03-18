@@ -17,17 +17,25 @@ export class MainLayoutComponent {
   showLogoutModal = false;
   currentUser$ = this.authService.currentUser$;
 
-  confirmLogout() {
-    this.showLogoutModal = true;
-  }
-
-  cancelLogout() {
-    this.showLogoutModal = false;
-  }
-
+  confirmLogout() { this.showLogoutModal = true; }
+  cancelLogout() { this.showLogoutModal = false; }
   executeLogout() {
     this.authService.logout();
     this.showLogoutModal = false;
     this.router.navigate(['/login']);
+  }
+
+  hasAccess(role: string): boolean {
+    return this.canSeeEmployees(role) || this.canSeeApprovals(role);
+  }
+
+  canSeeEmployees(role: string): boolean {
+    const r = role?.toUpperCase();
+    return ['HR', 'ADMIN MANAGER', 'ADM-MGR', 'MANAGER', 'MGR'].includes(r);
+  }
+
+  canSeeApprovals(role: string): boolean {
+    const r = role?.toUpperCase();
+    return r?.includes('SUPERVISOR') || r?.includes('MANAGER') || r?.includes('MGR') || r === 'HR';
   }
 }

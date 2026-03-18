@@ -12,7 +12,7 @@ import { AuthService, User } from '../../../core/services/auth';
   styleUrl: './history.component.css'
 })
 export class HistoryComponent implements OnInit {
-  // Observables for data streams
+  // Data Streams
   currentUser$: Observable<User | null>;
   allFilteredRequests$: Observable<any[]>;
   paginatedRequests$: Observable<any[]>;
@@ -22,12 +22,11 @@ export class HistoryComponent implements OnInit {
   private currentPageSubject = new BehaviorSubject<number>(1);
   currentPage$ = this.currentPageSubject.asObservable();
 
-  // Form Controls for Filters
+  // Filters
   searchControl = new FormControl('', { nonNullable: true });
   monthControl = new FormControl(new Date().getMonth(), { nonNullable: true });
   yearControl = new FormControl(new Date().getFullYear(), { nonNullable: true });
 
-  // Filter Options
   months = [
     { v: 0, l: 'Jan' }, { v: 1, l: 'Feb' }, { v: 2, l: 'Mar' }, { v: 3, l: 'Apr' },
     { v: 4, l: 'May' }, { v: 5, l: 'Jun' }, { v: 6, l: 'Jul' }, { v: 7, l: 'Aug' },
@@ -38,10 +37,8 @@ export class HistoryComponent implements OnInit {
   expandedReq: any = null;
 
   constructor(private authService: AuthService) {
-    // 1. Initialize Current User
     this.currentUser$ = this.authService.currentUser$;
     
-    // 2. Setup the Filtered Stream
     this.allFilteredRequests$ = combineLatest([
       this.authService.currentUser$,
       this.authService.requests$,
@@ -51,12 +48,11 @@ export class HistoryComponent implements OnInit {
     ]).pipe(
       map(([user, requests, term, selMonth, selYear]) => {
         if (!user || !requests) return [];
-        
         const s = term?.toLowerCase() || '';
-        const role = user.role?.toUpperCase() || '';
+        const userRole = user.role?.toUpperCase() || '';
 
         return requests.filter(req => {
-          // Search Logic
+          // 1. Search Logic
           const matchesSearch = 
             req.employeeName?.toLowerCase().includes(s) || 
             req.companyId?.toLowerCase().includes(s) ||
@@ -64,20 +60,18 @@ export class HistoryComponent implements OnInit {
 
           if (!matchesSearch) return false;
 
-          // Date Filter Logic
+          // 2. Date Filter Logic
           if (!this.checkPeriodMatch(req.period, Number(selMonth), Number(selYear))) return false;
 
-          // Permission Logic: Staff only see their own
-          if (role.includes('STAFF') || role.includes('DEV') || role.includes('IT')) {
-             return req.companyId === user.id;
+          // 3. Role Permissions: Staff/Devs only see their own. Management see all.
+          if (userRole.includes('STAFF') || userRole.includes('DEV') || userRole.includes('IT')) {
+             return req.employeeName === user.name;
           }
-          
           return true;
         });
       })
     );
 
-    // 3. Setup Pagination Stream
     this.paginatedRequests$ = combineLatest([
       this.allFilteredRequests$, 
       this.currentPage$
@@ -89,72 +83,78 @@ export class HistoryComponent implements OnInit {
     );
   }
 
-  ngOnInit(): void {
-    // Initialization logic if needed
-  }
+  ngOnInit(): void {}
 
-  private resetPagination() {
-    this.currentPageSubject.next(1);
-  }
+  private resetPagination() { this.currentPageSubject.next(1); }
 
   private checkPeriodMatch(period: string, selMonth: number, selYear: number): boolean {
     if (!period) return false;
-    const sep = period.includes(' to ') ? ' to ' : ' - ';
-    const dates = period.split(sep);
-    const start = new Date(dates[0].trim());
-    const end = dates[1] ? new Date(dates[1].trim()) : start;
-
-    return (start.getMonth() === selMonth && start.getFullYear() === selYear) || 
-           (end.getMonth() === selMonth && end.getFullYear() === selYear);
+    const sep = period.includes(' - ') ? ' - ' : ' to ';
+    const parts = period.split(sep);
+    const start = new Date(parts[0]);
+    return start.getMonth() === selMonth && start.getFullYear() === selYear;
   }
 
-  // --- UI Formatters ---
+  // --- PROGRESS TRACKER LOGIC ---
+
+  getSteps(req: any): string[] {
+    const role = (req.role || '').toUpperCase();
+    
+    // HR <-> Admin Manager: Direct 2-step process
+    if (role === 'HR') return ['Admin']; 
+    if (role === 'ADMIN MANAGER') return ['HR'];
+
+    // IT Devs & Supervisors: Admin Manager -> HR
+    if (role.includes('DEV') || role.includes('SUP')) return ['Admin', 'HR'];
+    
+    // OPS & ACC Staff: Supervisor -> HR
+    return ['Sup', 'HR'];
+  }
+
+  getStepStatus(req: any, index: number): 'completed' | 'rejected' | 'pending' | '' {
+    const status = req.status;
+    const steps = this.getSteps(req);
+    const isTwoStep = steps.length === 1;
+
+    // First Circle after "Filed"
+    if (index === 0) {
+      if (status === 'Approved') return 'completed';
+      if (status.includes('HR') || status.includes('Admin Approval')) return 'completed';
+      if (status === 'Rejected' || (status.includes('Rejected') && !status.includes('HR'))) return 'rejected';
+      return 'pending';
+    }
+
+    // Second Circle (Only for 3-step total processes)
+    if (index === 1) {
+      if (status === 'Approved') return 'completed';
+      if (status.toLowerCase().includes('rejected by hr')) return 'rejected';
+      if (status.includes('HR Approval')) return 'pending';
+      return '';
+    }
+
+    return '';
+  }
+
+  getStepIcon(req: any, index: number): string {
+    const stat = this.getStepStatus(req, index);
+    if (stat === 'completed') return '✓';
+    if (stat === 'rejected') return '✕';
+    if (stat === 'pending') return '...';
+    return '-';
+  }
+
+  // --- UI FORMATTERS ---
 
   getFormattedPeriod(period: string): string {
     if (!period) return 'N/A';
-    const sep = period.includes(' to ') ? ' to ' : ' - ';
-    
-    if (!period.includes(sep)) {
-      const singleDate = new Date(period.trim());
-      if (isNaN(singleDate.getTime())) return period;
-      return `1 Day (${singleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
-    }
-
+    const sep = period.includes(' - ') ? ' - ' : ' to ';
     const parts = period.split(sep);
-    const start = new Date(parts[0].trim());
-    const end = new Date(parts[1].trim());
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return period;
-
+    const start = new Date(parts[0]);
+    const end = parts[1] ? new Date(parts[1]) : start;
     const diff = Math.ceil(Math.abs(end.getTime() - start.getTime()) / 86400000) + 1;
-    const startFmt = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const endFmt = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-    return `${diff} ${diff === 1 ? 'Day' : 'Days'} (${startFmt} - ${endFmt})`;
+    return `${diff} ${diff === 1 ? 'Day' : 'Days'} (${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
   }
 
-  getSupervisorClass(r: any) { 
-    if (r.status === 'Approved' || r.status.includes('HR')) return 'completed';
-    return r.status === 'Rejected' && !r.status.includes('HR') ? 'rejected' : '';
-  }
-
-  getSupervisorIcon(r: any) { 
-    const c = this.getSupervisorClass(r); 
-    return c === 'completed' ? '✓' : c === 'rejected' ? '✕' : '?'; 
-  }
-
-  getHRClass(r: any) { 
-    if (r.status === 'Approved') return 'completed';
-    return r.status === 'Rejected' && r.status.includes('HR') ? 'rejected' : '';
-  }
-
-  getHRIcon(r: any) { 
-    const c = this.getHRClass(r); 
-    if (c === 'completed') return '✓';
-    if (c === 'rejected') return '✕';
-    return r.status.includes('HR Approval') ? '...' : '-'; 
-  }
-  
   getRelativeDate(d: any) { 
     const date = new Date(d); 
     const today = new Date();
@@ -163,7 +163,7 @@ export class HistoryComponent implements OnInit {
     yesterday.setDate(today.getDate() - 1);
     return date.toDateString() === yesterday.toDateString() ? 'Yesterday' : '';
   }
-  
+
   toggleReason(r: any) { this.expandedReq = this.expandedReq === r ? null : r; }
   
   viewDocument(att: any) { 
@@ -178,10 +178,11 @@ export class HistoryComponent implements OnInit {
     return '💰'; 
   }
 
-  // --- Pagination Helpers ---
+  // --- PAGINATION HELPERS ---
   getTotalPages(t: number) { return Math.ceil(t / this.itemsPerPage) || 1; }
   getStartRange(t: number) { return t === 0 ? 0 : (this.currentPageSubject.value - 1) * this.itemsPerPage + 1; }
   getEndRange(t: number) { return Math.min(this.currentPageSubject.value * this.itemsPerPage, t); }
   prevPage() { if (this.currentPageSubject.value > 1) this.currentPageSubject.next(this.currentPageSubject.value - 1); }
   nextPage(t: number) { if (this.currentPageSubject.value < this.getTotalPages(t)) this.currentPageSubject.next(this.currentPageSubject.value + 1); }
+  onItemsPerPageChange(e: any) { this.itemsPerPage = +e.target.value; this.currentPageSubject.next(1); }
 }

@@ -7,18 +7,20 @@
     
     <div class="sidebar-content">
       <ul class="nav-menu">
+        <li class="section-header">Main</li>
         <li routerLink="/dashboard" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Dashboard</li>
-        <li routerLink="/file-leave" routerLinkActive="active-link">File Leave</li>
-        <li routerLink="/history" routerLinkActive="active-link">History / Tracker</li>
         <li routerLink="/calendar" routerLinkActive="active-link">Company Calendar</li> 
-        
-        <li *ngIf="currentUser.role.includes('Supervisor') || currentUser.role.includes('Manager') || currentUser.role === 'HR'" 
-            routerLink="/approvals" 
-            routerLinkActive="active-link">
-          Approvals
-        </li>
-        
-        <li routerLink="/profile" routerLinkActive="active-link">Profile</li>
+        <li routerLink="/history" routerLinkActive="active-link">My Tracker</li>
+        <li routerLink="/file-leave" routerLinkActive="active-link">File Leave</li>
+
+        <ng-container *ngIf="hasAccess(currentUser.role)">
+          <li class="section-header">Management</li>
+          <li *ngIf="canSeeEmployees(currentUser.role)" routerLink="/employees" routerLinkActive="active-link">Employee Status</li>
+          <li *ngIf="canSeeApprovals(currentUser.role)" routerLink="/approvals" routerLinkActive="active-link">Leave Approvals</li>
+        </ng-container>
+
+        <li class="section-header">Account</li>
+        <li routerLink="/profile" routerLinkActive="active-link">My Profile</li>
       </ul>
     </div>
 
@@ -35,8 +37,7 @@
     <div class="modal-card">
       <div class="modal-icon">!</div>
       <h3>Confirm Logout</h3>
-      <p>Are you sure you want to log out, {{ currentUser.name }}?</p>
-      
+      <p>Are you sure you want to log out, <strong>{{ currentUser.name }}</strong>?</p>
       <div class="modal-actions">
         <button class="btn-cancel" (click)="cancelLogout()">Cancel</button>
         <button class="btn-confirm" (click)="executeLogout()">Log Out</button>
