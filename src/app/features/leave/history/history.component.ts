@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { Observable, combineLatest, BehaviorSubject, startWith, map, tap } from 'rxjs';
 import { AuthService, User } from '../../../core/services/auth';
+// Import the utility
+import { calculateWorkdays } from '../../../core/utils/workday-calculator.util';
 
 @Component({
   selector: 'app-history',
@@ -12,17 +14,14 @@ import { AuthService, User } from '../../../core/services/auth';
   styleUrl: './history.component.css'
 })
 export class HistoryComponent implements OnInit {
-  // Data Streams
   currentUser$: Observable<User | null>;
   allFilteredRequests$: Observable<any[]>;
   paginatedRequests$: Observable<any[]>;
   
-  // Pagination State
   itemsPerPage = 10;
   private currentPageSubject = new BehaviorSubject<number>(1);
   currentPage$ = this.currentPageSubject.asObservable();
 
-  // Filters
   searchControl = new FormControl('', { nonNullable: true });
   monthControl = new FormControl(new Date().getMonth(), { nonNullable: true });
   yearControl = new FormControl(new Date().getFullYear(), { nonNullable: true });
@@ -63,10 +62,20 @@ export class HistoryComponent implements OnInit {
           // 2. Date Filter Logic
           if (!this.checkPeriodMatch(req.period, Number(selMonth), Number(selYear))) return false;
 
-          // 3. Role Permissions: Staff/Devs only see their own. Management see all.
+          // 3. Updated Role Permissions (Private HR Loop Logic)
+          const isAdminOrHR = user.role === 'Admin Manager' || user.role === 'HR';
+          const isSensitiveRequest = req.role === 'HR' || req.role === 'Admin Manager';
+
+          // Staff/Devs only see their own.
           if (userRole.includes('STAFF') || userRole.includes('DEV') || userRole.includes('IT')) {
              return req.employeeName === user.name;
           }
+
+          // Management/Supervisors see everyone EXCEPT the HR/Admin loop (unless they are part of it)
+          if (isSensitiveRequest) {
+            return isAdminOrHR;
+          }
+
           return true;
         });
       })
@@ -89,49 +98,37 @@ export class HistoryComponent implements OnInit {
 
   private checkPeriodMatch(period: string, selMonth: number, selYear: number): boolean {
     if (!period) return false;
-    const sep = period.includes(' - ') ? ' - ' : ' to ';
+    const sep = period.includes(' to ') ? ' to ' : ' - ';
     const parts = period.split(sep);
     const start = new Date(parts[0]);
     return start.getMonth() === selMonth && start.getFullYear() === selYear;
   }
 
   // --- PROGRESS TRACKER LOGIC ---
+  // (Keeping your current step logic as it correctly maps the approval flow)
 
   getSteps(req: any): string[] {
     const role = (req.role || '').toUpperCase();
-    
-    // HR <-> Admin Manager: Direct 2-step process
     if (role === 'HR') return ['Admin']; 
     if (role === 'ADMIN MANAGER') return ['HR'];
-
-    // IT Devs & Supervisors: Admin Manager -> HR
     if (role.includes('DEV') || role.includes('SUP')) return ['Admin', 'HR'];
-    
-    // OPS & ACC Staff: Supervisor -> HR
     return ['Sup', 'HR'];
   }
 
   getStepStatus(req: any, index: number): 'completed' | 'rejected' | 'pending' | '' {
     const status = req.status;
-    const steps = this.getSteps(req);
-    const isTwoStep = steps.length === 1;
-
-    // First Circle after "Filed"
     if (index === 0) {
       if (status === 'Approved') return 'completed';
       if (status.includes('HR') || status.includes('Admin Approval')) return 'completed';
       if (status === 'Rejected' || (status.includes('Rejected') && !status.includes('HR'))) return 'rejected';
       return 'pending';
     }
-
-    // Second Circle (Only for 3-step total processes)
     if (index === 1) {
       if (status === 'Approved') return 'completed';
       if (status.toLowerCase().includes('rejected by hr')) return 'rejected';
       if (status.includes('HR Approval')) return 'pending';
       return '';
     }
-
     return '';
   }
 
@@ -143,15 +140,19 @@ export class HistoryComponent implements OnInit {
     return '-';
   }
 
-  // --- UI FORMATTERS ---
+  // --- REFINED UI FORMATTERS ---
 
   getFormattedPeriod(period: string): string {
     if (!period) return 'N/A';
+    
+    // Fetch holidays to ensure the day count in history matches the Filing page
+    const holidayList = JSON.parse(localStorage.getItem('company_holidays') || '[]');
+    const diff = calculateWorkdays(period, holidayList);
+    
     const sep = period.includes(' - ') ? ' - ' : ' to ';
     const parts = period.split(sep);
     const start = new Date(parts[0]);
-    const end = parts[1] ? new Date(parts[1]) : start;
-    const diff = Math.ceil(Math.abs(end.getTime() - start.getTime()) / 86400000) + 1;
+
     return `${diff} ${diff === 1 ? 'Day' : 'Days'} (${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
   }
 
@@ -178,7 +179,6 @@ export class HistoryComponent implements OnInit {
     return '💰'; 
   }
 
-  // --- PAGINATION HELPERS ---
   getTotalPages(t: number) { return Math.ceil(t / this.itemsPerPage) || 1; }
   getStartRange(t: number) { return t === 0 ? 0 : (this.currentPageSubject.value - 1) * this.itemsPerPage + 1; }
   getEndRange(t: number) { return Math.min(this.currentPageSubject.value * this.itemsPerPage, t); }

@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Observable, map, combineLatest, switchMap } from 'rxjs';
+import { Observable, map, combineLatest, switchMap, of } from 'rxjs';
 import { AuthService } from '../../core/services/auth';
 
 @Component({
@@ -20,6 +20,7 @@ export class DashboardComponent implements OnInit {
   today: Date = new Date();
 
   constructor() {
+    // 1. Calculate Credits for the logged-in user
     this.currentUser$ = combineLatest([
       this.authService.currentUser$,
       this.authService.requests$
@@ -61,22 +62,21 @@ export class DashboardComponent implements OnInit {
       })
     );
 
+    // 2. Personal Activity Stream (Strictly Filtered)
     this.requests$ = this.authService.currentUser$.pipe(
-      switchMap(user => 
-        this.authService.requests$.pipe(
+      switchMap(user => {
+        if (!user) return of([]);
+        
+        return this.authService.requests$.pipe(
           map(requests => {
-            if (!user) return [];
-            const isStaff = user.role === 'Operations Staff' || user.role === 'Accounts Staff';
-            const filtered = isStaff 
-              ? requests.filter(req => req.employeeName === user.name)
-              : [...requests];
-            
-            return filtered
+            // Personal filter: only show requests filed by the current user
+            return requests
+              .filter(req => req.employeeName === user.name)
               .sort((a, b) => new Date(b.dateFiled).getTime() - new Date(a.dateFiled).getTime())
               .slice(0, 5);
           })
-        )
-      )
+        );
+      })
     );
   }
 

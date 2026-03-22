@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+// Import the utility from its new location
+import { calculateWorkdays } from '../utils/workday-calculator.util';
 
 export interface Attachment {
   name: string;
@@ -24,7 +26,7 @@ export interface User {
 export class AuthService {
   private readonly REQ_KEY = 'cls_leave_requests';
   private readonly USER_KEY = 'cls_user_session';
-  private readonly USERS_DB_KEY = 'cls_users_database'; // New key for persistent credits
+  private readonly USERS_DB_KEY = 'cls_users_database';
 
   private defaultUsers: User[] = [
     { id: 'OPS-ADM-STF', name: 'Reymart L. Prado', role: 'Operations Staff', department: 'Operations', birthDate: '1998-03-15', credits: { paidLeave: 15, birthdayLeave: 1, sickLeave: 10 } },
@@ -51,7 +53,6 @@ export class AuthService {
     this.loadUsersDatabase();
   }
 
-  // Load users from LocalStorage or initialize with defaults
   private loadUsersDatabase() {
     const saved = localStorage.getItem(this.USERS_DB_KEY);
     if (saved) {
@@ -100,12 +101,18 @@ export class AuthService {
     const user = this.currentUserSubject.value;
     if (!user) return;
 
-    let firstReviewer = 'HR'; 
-    const role = user.role;
-    if (role === 'Operations Staff') firstReviewer = 'Ops Supervisor';
-    else if (role === 'Accounts Staff') firstReviewer = 'Acc Supervisor';
-    else if (['Ops Supervisor', 'Acc Supervisor', 'It Developer', 'HR'].includes(role)) firstReviewer = 'Admin Manager';
-    else if (role === 'Admin Manager') firstReviewer = 'HR';
+    // Refined Reviewer Mapping
+    const reviewerMap: { [key: string]: string } = {
+      'Operations Staff': 'Ops Supervisor',
+      'Accounts Staff': 'Acc Supervisor',
+      'Ops Supervisor': 'Admin Manager',
+      'Acc Supervisor': 'Admin Manager',
+      'It Developer': 'Admin Manager',
+      'HR': 'Admin Manager',
+      'Admin Manager': 'HR'
+    };
+
+    const firstReviewer = reviewerMap[user.role] || 'HR';
 
     const enriched = { 
       ...newRequest, 
@@ -131,7 +138,6 @@ export class AuthService {
       if (req.id === requestId) {
         if (action === 'Reject') return { ...req, status: 'Rejected', targetReviewer: 'None' };
 
-        // Approval Logic
         if (currentUser.role === 'Admin Manager') {
           if (req.role === 'HR') {
             this.deductCredits(req.companyId, req.type, req.period);
@@ -159,14 +165,9 @@ export class AuthService {
     const user = this.usersDatabase.find(u => u.id === userId);
     if (!user) return;
 
-    let days = 1;
-    const sep = period.includes(' to ') ? ' to ' : ' - ';
-    if (period.includes(sep)) {
-      const parts = period.split(sep);
-      const start = new Date(parts[0]);
-      const end = new Date(parts[1]);
-      days = Math.ceil(Math.abs(end.getTime() - start.getTime()) / 86400000) + 1;
-    }
+    // Fetch holidays from localStorage to skip them in calculation
+    const holidayList = JSON.parse(localStorage.getItem('company_holidays') || '[]');
+    const daysToDeduct = calculateWorkdays(period, holidayList);
 
     const typeMap: { [key: string]: keyof User['credits'] } = {
       'Paid Leave': 'paidLeave',
@@ -176,10 +177,9 @@ export class AuthService {
 
     const creditKey = typeMap[leaveType];
     if (creditKey) {
-      user.credits[creditKey] = Math.max(0, user.credits[creditKey] - days);
-      this.saveUsersDatabase(); // Save the updated credits to DB
+      user.credits[creditKey] = Math.max(0, user.credits[creditKey] - daysToDeduct);
+      this.saveUsersDatabase();
 
-      // If the modified user is the one currently logged in, update their session too
       if (this.currentUserSubject.value?.id === userId) {
         this.currentUserSubject.next({ ...user });
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
@@ -192,7 +192,6 @@ export class AuthService {
     localStorage.setItem(this.REQ_KEY, JSON.stringify(requests));
   }
 
-  // Public synchronous method to get current requests
   getRequestsSync(): any[] {
     return this.requestsSubject.value;
   }

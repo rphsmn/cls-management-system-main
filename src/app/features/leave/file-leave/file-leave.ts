@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { AuthService, Attachment } from '../../../core/services/auth';
 import { Observable, combineLatest, map, take } from 'rxjs';
+// Ensure this path matches where you created the utility
+import { calculateWorkdays } from '../../../core/utils/workday-calculator.util';
 
 @Component({
   selector: 'app-file-leave',
@@ -36,9 +38,11 @@ export class FileLeaveComponent implements OnInit {
   showSuccessToast = false;
 
   constructor() {
-    // Current System Date: March 18, 2026
     const today = new Date();
     this.minDate = today.toISOString().split('T')[0];
+
+    // Get holidays once to use in calculations
+    const holidayList = JSON.parse(localStorage.getItem('company_holidays') || '[]');
 
     this.liveCredits$ = combineLatest([
       this.authService.currentUser$,
@@ -61,13 +65,8 @@ export class FileLeaveComponent implements OnInit {
                 : (isSameType && (rStatus.includes('pending') || rStatus.includes('hr')));
             })
             .reduce((sum, r) => {
-              if (r.period?.includes(' - ')) {
-                const dates = r.period.split(' - ');
-                const start = new Date(dates[0]).getTime();
-                const end = new Date(dates[1]).getTime();
-                return sum + (Math.ceil(Math.abs(end - start) / 86400000) + 1);
-              }
-              return sum + 1;
+              // UPDATED: Use the utility for accurate balance calculation
+              return sum + calculateWorkdays(r.period, holidayList);
             }, 0);
         };
 
@@ -88,13 +87,11 @@ export class FileLeaveComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       if (params['date']) {
         const selectedDate = params['date'];
-        // Ensure we don't allow past dates even via URL params
         const finalDate = selectedDate < this.minDate ? this.minDate : selectedDate;
         
         this.leaveRequest.startDate = finalDate;
         this.leaveRequest.endDate = finalDate;
         
-        // Default to Paid Leave if coming from Calendar to trigger validation
         if (!this.leaveRequest.type) {
           this.leaveRequest.type = 'Paid Leave';
         }
@@ -109,15 +106,16 @@ export class FileLeaveComponent implements OnInit {
       const start = new Date(this.leaveRequest.startDate);
       const end = new Date(this.leaveRequest.endDate);
       
-      // Reset end date if it's before start date
       if (end < start) {
         this.leaveRequest.endDate = this.leaveRequest.startDate;
       }
 
-      const diffTime = new Date(this.leaveRequest.endDate).getTime() - new Date(this.leaveRequest.startDate).getTime();
-      this.totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      // UPDATED: Use utility to calculate totalDays for the UI
+      const holidayList = JSON.parse(localStorage.getItem('company_holidays') || '[]');
+      const period = `${this.leaveRequest.startDate} to ${this.leaveRequest.endDate}`;
+      this.totalDays = calculateWorkdays(period, holidayList);
 
-      // Notice Logic
+      // Notice Logic (Notice is still based on calendar days from TODAY)
       const today = new Date();
       today.setHours(0,0,0,0);
       const noticeDiff = Math.ceil((start.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -182,7 +180,7 @@ export class FileLeaveComponent implements OnInit {
     this.showSuccessToast = true;
     setTimeout(() => {
       this.showSuccessToast = false;
-      this.router.navigate(['/my-tracker']); // Updated to go to tracker/history
+      this.router.navigate(['/my-tracker']);
     }, 2000);
   }
 }
