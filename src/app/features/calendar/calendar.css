@@ -184,6 +184,18 @@
   margin: 4px 0; 
 }
 
+.birthday-pill { 
+  background: #fdf2f8; 
+  color: #be185d; 
+  font-size: 10px; 
+  font-weight: 800; 
+  padding: 4px 8px; 
+  border-radius: 6px; 
+  border: 1px solid #fbcfe8; 
+  width: fit-content; 
+  margin: 4px 0; 
+}
+
 .holiday-pill { 
   font-size: 10px; 
   font-weight: 700; 
@@ -281,6 +293,14 @@
 }
 
 .hero-title { font-size: 28px; font-weight: 800; margin: 0; line-height: 1.2; }
+
+.birthday-message {
+  margin-top: 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fdf2f8;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
 
 .close-x-white { 
   position: absolute; 

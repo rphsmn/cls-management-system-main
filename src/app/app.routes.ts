@@ -11,6 +11,7 @@ import { ApprovalsComponent } from './features/approvals/approvals';
 import { ProfileComponent } from './features/profile/profile';
 import { CalendarComponent } from './features/calendar/calendar';
 import { EmployeeStatusComponent } from './features/employees/employees';
+import { EmployeeUpdateComponent } from './features/admin/employee-update/employee-update.component';
 
 export const routes: Routes = [
   { 
@@ -39,7 +40,8 @@ export const routes: Routes = [
       { path: 'approvals', component: ApprovalsComponent },
       { path: 'profile', component: ProfileComponent },
       { path: 'calendar', component: CalendarComponent },
-      { path: 'employees', component: EmployeeStatusComponent }
+      { path: 'employees', component: EmployeeStatusComponent },
+      { path: 'admin/employee-update', component: EmployeeUpdateComponent }
     ]
   },
   // Explicitly add login redirect for when not authenticated

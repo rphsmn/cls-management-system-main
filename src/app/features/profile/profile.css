@@ -17,6 +17,12 @@
   gap: 24px;
 }
 
+@media (max-width: 768px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .info-card {
   background: white;
   border: 1px solid #e2e8f0;

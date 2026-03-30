@@ -6,6 +6,8 @@ import { AuthService, calculatePaidTimeOff, hasCompletedOneYear, isPartTimeEmplo
 import { LeaveService } from '../../core/services/leave.services';
 import { calculateWorkdays } from '../../core/utils/workday-calculator.util';
 import { Firestore, collection, getDocs } from '@angular/fire/firestore';
+import Swal from 'sweetalert2';
+import confetti from 'canvas-confetti';
 
 interface CompanyStats {
   totalEmployees: number;
@@ -223,6 +225,162 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (hour < 12) this.greeting = 'Good Morning';
     else if (hour < 18) this.greeting = 'Good Afternoon';
     else this.greeting = 'Good Evening';
+    
+    // Check for birthday and show greeting popup
+    this.checkBirthday();
+  }
+  
+  private checkBirthday() {
+    const user = this.authService.currentUser;
+    if (!user || !user.birthday) return;
+    
+    // Parse birthday and check if it's today
+    const birthdayDate = new Date(user.birthday);
+    const todayDate = new Date();
+    
+    // Check if month and day match (ignore year)
+    if (birthdayDate.getMonth() === todayDate.getMonth() && 
+        birthdayDate.getDate() === todayDate.getDate()) {
+      
+      // Fire confetti from both sides
+      this.fireConfetti();
+      
+      // Play Happy Birthday audio using YouTube embed (hidden)
+      this.playBirthdaySong();
+      
+      // Show birthday greeting popup with custom design
+      Swal.fire({
+        title: 'Happy Birthday!',
+        html: `
+          <div style="
+            background: linear-gradient(135deg, #1a5336 0%, #2d7a50 100%);
+            border-radius: 16px;
+            padding: 32px 24px;
+            margin: -24px -24px 20px -24px;
+            position: relative;
+            overflow: hidden;
+          ">
+            <div style="
+              position: absolute;
+              top: 10px;
+              left: 20px;
+              font-size: 48px;
+              opacity: 0.15;
+            ">🎂</div>
+            <div style="
+              position: absolute;
+              bottom: -20px;
+              right: -10px;
+              font-size: 80px;
+              opacity: 0.1;
+            ">🎈</div>
+            <div style="position: relative; z-index: 1; text-align: center;">
+              <div style="
+                font-size: 56px;
+                margin-bottom: 16px;
+                text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+              ">🎂</div>
+              <div style="
+                color: white;
+                font-size: 22px;
+                font-weight: 700;
+                margin-bottom: 8px;
+                text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+              ">${user.name}</div>
+              <div style="
+                color: rgba(255,255,255,0.9);
+                font-size: 14px;
+                font-style: italic;
+              ">Wishing you all the best today!</div>
+            </div>
+          </div>
+          <div style="
+            text-align: center;
+            padding: 0 8px;
+          ">
+            <div style="
+              font-size: 16px;
+              color: #1a5336;
+              font-weight: 600;
+              margin-bottom: 8px;
+            ">From your Cor Logic Family</div>
+            <div style="
+              display: inline-flex;
+              gap: 8px;
+              margin-top: 12px;
+            ">
+              <span style="font-size: 20px;">💚</span>
+              <span style="font-size: 20px;">🎉</span>
+              <span style="font-size: 20px;">🎊</span>
+              <span style="font-size: 20px;">✨</span>
+              <span style="font-size: 20px;">💚</span>
+            </div>
+          </div>
+        `,
+        confirmButtonColor: '#1a5336',
+        confirmButtonText: 'Thank You!',
+        background: '#ffffff',
+        color: '#1e293b',
+        padding: '0',
+        width: '380px',
+        allowOutsideClick: false
+      });
+    }
+  }
+  
+  private playBirthdaySong() {
+    // Create a hidden YouTube iframe to play the birthday song
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = 'https://www.youtube.com/embed/nAw2ooeubSQ?autoplay=1&controls=0&loop=1&playlist=nAw2ooeubSQ';
+    iframe.width = '1';
+    iframe.height = '1';
+    iframe.frameBorder = '0';
+    iframe.allow = 'autoplay; encrypted-media';
+    document.body.appendChild(iframe);
+    
+    // Auto-cleanup after 30 seconds
+    setTimeout(() => {
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+    }, 30000);
+  }
+  
+  private fireConfetti() {
+    // Confetti from left side
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { x: 0, y: 0.6 },
+      colors: ['#1a5336', '#2d7a50', '#f59e0b', '#ef4444', '#3b82f6']
+    });
+    
+    // Confetti from right side
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { x: 1, y: 0.6 },
+      colors: ['#1a5336', '#2d7a50', '#f59e0b', '#ef4444', '#3b82f6']
+    });
+    
+    // Center burst after a short delay
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.7 },
+        colors: ['#1a5336', '#f59e0b']
+      });
+      confetti({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.7 },
+        colors: ['#1a5336', '#f59e0b']
+      });
+    }, 250);
   }
   
   ngOnDestroy() {

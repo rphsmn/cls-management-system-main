@@ -38,6 +38,10 @@
             👥 {{ day.awayCount }} Away
           </div>
 
+          <div class="birthday-pill" *ngIf="!day.empty && day.birthdays?.length > 0">
+            🎂 {{ day.birthdays.length }} Birthday{{ day.birthdays.length > 1 ? 's' : '' }}
+          </div>
+
           <div class="holiday-pill" *ngIf="day.holiday" [className]="'holiday-pill type-' + day.holiday.type">
             <span class="holiday-name">{{ day.holiday.name }}</span>
             <div class="flag-row">
@@ -77,6 +81,12 @@
       <div class="hero-content">
         <span class="hero-date">{{ selectedDay.date | date:'EEEE, MMMM d, yyyy' }}</span>
         <h2 class="hero-title">{{ selectedDay.holiday?.name || 'Standard Work Day' }}</h2>
+        <div class="birthday-message" *ngIf="selectedDay.birthdays?.length > 0">
+          <span *ngFor="let b of selectedDay.birthdays; let last = last">
+            🎂 It's {{ b.name }}'s Birthday!{{ !last ? ' & ' : '' }}
+          </span>
+        </div>
+
       </div>
       <button (click)="showModal = false" class="close-x-white">✕</button>
     </div>

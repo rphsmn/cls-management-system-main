@@ -125,12 +125,27 @@ export class LeaveService implements OnDestroy {
     const updateData: any = { status: newStatus };
 
     // Business Logic: Multi-level approval flow
+    // Operations Admin staff: Ops Admin Supervisor → HR
+    // Accounts staff: Account Supervisor → HR
     // Operations Admin Supervisor / Account Supervisor / IT Dev → Admin Manager → HR
     // HR → Admin Manager (HR NOT reviewed again after Admin Manager approval)
     // Admin Manager → HR (Admin Manager needs HR approval)
     if (newStatus === 'Approved') {
       const reviewerRoleLower = reviewerRole.toLowerCase();
-      if (reviewerRoleLower === 'admin manager') {
+      
+      // Handle Operations Admin Supervisor approval
+      if (reviewerRoleLower === 'operations admin supervisor') {
+        // Ops Admin Supervisor approved - needs HR approval next
+        updateData.status = 'Awaiting HR Approval';
+        updateData.targetReviewer = 'HR';
+      }
+      // Handle Account Supervisor approval
+      else if (reviewerRoleLower === 'account supervisor') {
+        // Account Supervisor approved - needs HR approval next
+        updateData.status = 'Awaiting HR Approval';
+        updateData.targetReviewer = 'HR';
+      }
+      else if (reviewerRoleLower === 'admin manager') {
         // Admin Manager approved
         // Check if employee's role skips the HR review step:
         // - HR role: doesn't need another HR review (already reviewed by Admin Manager)

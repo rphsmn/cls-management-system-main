@@ -24,6 +24,11 @@ export interface User {
   joinedDate?: string; // ISO date string for calculating years of service
   gender?: 'male' | 'female'; // For maternity/paternity leave visibility
   birthdayLeave: number;
+  // Government IDs
+  tin?: string; // Tax Identification Number
+  sss?: string; // Social Security System
+  philhealth?: string; // PhilHealth number
+  pagibig?: string; // Pag-IBIG number
   // Note: paidTimeoff is calculated dynamically based on joinedDate and role
   // Note: others (maternity/paternity) is fixed based on gender
 }
@@ -255,7 +260,12 @@ export class AuthService implements OnDestroy {
                 birthday: userDoc['birthday'] || undefined,
                 joinedDate: userDoc['joinedDate'] || undefined,
                 gender: userDoc['gender'] || undefined,
-                birthdayLeave: userDoc['birthdayLeave'] || userDoc['birthdayleave'] || 1
+                birthdayLeave: userDoc['birthdayLeave'] || userDoc['birthdayleave'] || 1,
+                // Government IDs
+                tin: userDoc['tin'] || undefined,
+                sss: userDoc['sss'] || undefined,
+                philhealth: userDoc['philhealth'] || undefined,
+                pagibig: userDoc['pagibig'] || undefined
               };
               
               // Update cache

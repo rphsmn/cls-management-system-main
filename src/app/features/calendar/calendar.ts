@@ -40,6 +40,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   newEventName = ''; // Bound to your [(ngModel)] in the HTML
   holidays: any[] = [];
   companyEvents: any[] = [];
+  birthdays: any[] = []; // Store employee birthdays
 
   ngOnInit() {
     this.generateYearOptions();
@@ -73,9 +74,33 @@ export class CalendarComponent implements OnInit, OnDestroy {
       const eventsRef = collection(this.firestore, 'company_events');
       const snapshot = await getDocs(eventsRef);
       this.companyEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      this.generateCalendar();
+      this.loadEmployeeBirthdays();
     } catch (error) {
       console.error('Error loading company events:', error);
+    }
+  }
+
+  private async loadEmployeeBirthdays() {
+    try {
+      const usersRef = collection(this.firestore, 'users');
+      const snapshot = await getDocs(usersRef);
+      const allUsers = snapshot.docs.map(doc => doc.data() as any);
+      this.birthdays = allUsers
+        .filter((user: any) => user.birthday) // Only include users with birthday
+        .map((user: any) => {
+          const birthdayDate = new Date(user.birthday);
+          return {
+            name: user.name || user.Name || 'Employee',
+            birthday: user.birthday,
+            // Extract month and day for matching
+            month: birthdayDate.getMonth(),
+            day: birthdayDate.getDate()
+          };
+        });
+      this.generateCalendar();
+    } catch (error) {
+      console.error('Error loading birthdays:', error);
+      this.generateCalendar();
     }
   }
 
@@ -197,7 +222,10 @@ export class CalendarComponent implements OnInit, OnDestroy {
         
         const customEvent = this.companyEvents.find(e => e.date === dateStr);
         const awayCount = allRequests.filter((r: any) => r.status === 'Approved' && this.isDateInPeriod(dateObj, r.period)).length;
-
+        
+        // Find birthdays on this day
+        const dayBirthdays = this.birthdays.filter(b => b.month === month && b.day === i);
+        
         this.days.push({
           day: i, 
           date: dateStr, 
@@ -205,7 +233,8 @@ export class CalendarComponent implements OnInit, OnDestroy {
           companyEvent: customEvent,
           awayCount, 
           isToday: today.toDateString() === dateObj.toDateString(), 
-          isPast: dateObj < today 
+          isPast: dateObj < today,
+          birthdays: dayBirthdays
         });
       }
       // Force change detection by reassigning days array

@@ -38,6 +38,17 @@
       <div class="data-row" *ngIf="user.gender"><label>Gender</label><span>{{ user.gender | titlecase }}</span></div>
     </section>
 
+    <section class="info-card" *ngIf="user.tin || user.sss || user.philhealth || user.pagibig">
+      <div class="card-title">
+        <h3>Government IDs</h3>
+        <span class="verified">✓ Verified</span>
+      </div>
+      <div class="data-row" *ngIf="user.tin"><label>TIN</label><span>{{ user.tin }}</span></div>
+      <div class="data-row" *ngIf="user.sss"><label>SSS</label><span>{{ user.sss }}</span></div>
+      <div class="data-row" *ngIf="user.philhealth"><label>PhilHealth</label><span>{{ user.philhealth }}</span></div>
+      <div class="data-row" *ngIf="user.pagibig"><label>Pag-IBIG</label><span>{{ user.pagibig }}</span></div>
+    </section>
+
     <section class="info-card">
       <div class="card-title">
         <h3>Leave Balance</h3>

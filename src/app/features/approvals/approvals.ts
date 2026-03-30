@@ -54,6 +54,10 @@ export class ApprovalsComponent {
         const normalizedUserRole = user.role.toLowerCase();
 
         return allRequests.filter(req => {
+          // Only show requests that need action (pending or awaiting approval)
+          const actionStatuses = ['Pending', 'Awaiting HR Approval', 'Awaiting Admin Manager Approval'];
+          if (!actionStatuses.includes(req.status)) return false;
+          
           const matchesSearch = 
             req.employeeName?.toLowerCase().includes(term) || 
             req.companyId?.toLowerCase().includes(term) ||
@@ -65,6 +69,36 @@ export class ApprovalsComponent {
           if (!isMatch) return false;
 
           const normalizedTarget = (req.targetReviewer || '').toLowerCase();
+          
+          // Explicitly filter out 'None' targetReviewer (fully approved/rejected)
+          if (normalizedTarget === 'none' || !req.targetReviewer) {
+            return false;
+          }
+          
+          // HR role mapping - HR users should see requests targeted to 'HR'
+          const hrRoles = ['hr', 'human resource officer', 'human resources officer', 'hr officer'];
+          if (normalizedTarget === 'hr' && hrRoles.includes(normalizedUserRole)) {
+            return true;
+          }
+          
+          // Admin Manager should see requests targeted to 'Admin Manager'
+          const adminManagerRoles = ['admin manager', 'admin'];
+          if (normalizedTarget === 'admin manager' && adminManagerRoles.includes(normalizedUserRole)) {
+            return true;
+          }
+          
+          // Operations Admin Supervisor should see requests targeted to them
+          const opsAdminRoles = ['operations admin supervisor', 'ops admin supervisor', 'ops admin'];
+          if (normalizedTarget === 'operations admin supervisor' && opsAdminRoles.includes(normalizedUserRole)) {
+            return true;
+          }
+          
+          // Account Supervisor should see requests targeted to them
+          const acctSupervisorRoles = ['account supervisor', 'acct supervisor', 'acct sup'];
+          if (normalizedTarget === 'account supervisor' && acctSupervisorRoles.includes(normalizedUserRole)) {
+            return true;
+          }
+          
           return normalizedTarget === normalizedUserRole;
         });
       })
